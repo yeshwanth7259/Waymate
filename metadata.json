@@ -1,0 +1,6 @@
+{
+  "name": "WayMate - Karnataka & Bengaluru Smart Commute Carpool Network",
+  "description": "A verified daily commute and route-sharing network for Bengaluru and Karnataka tech corridors. Share rides, cut travel costs, and commute with verified colleagues.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

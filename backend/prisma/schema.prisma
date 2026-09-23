@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  firebaseUid String   @unique
+  phone       String   @unique
+  email       String?  @unique
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profile     Profile?
+  vehicles    Vehicle[]
+  ridesOffered Ride[]   @relation("HostRides")
+  bookings    Booking[]
+  verifications Verification[]
+}
+
+model Profile {
+  id                 Int      @id @default(autoincrement())
+  userId             Int      @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName           String?
+  profilePhoto       String?
+  gender             String?
+  dateOfBirth        String?
+  city               String?
+  bio                String?
+  occupation         String?
+  college            String?
+  company            String?
+  emergencyContact   String?
+  rating             Float    @default(0.0)
+  totalRides         Int      @default(0)
+  verificationStatus String   @default("PENDING")
+}
+
+model Vehicle {
+  id                 Int      @id @default(autoincrement())
+  userId             Int
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type               String   // CAR or BIKE
+  brand              String
+  model              String
+  registrationNumber String
+  color              String?
+  seatCapacity       Int
+  helmetAvailable    Boolean? // For BIKE
+  verificationStatus String   @default("PENDING")
+  createdAt          DateTime @default(now())
+  rides              Ride[]
+}
+
+model Ride {
+  id             Int      @id @default(autoincrement())
+  hostId         Int
+  host           User     @relation("HostRides", fields: [hostId], references: [id])
+  vehicleId      Int
+  vehicle        Vehicle  @relation(fields: [vehicleId], references: [id])
+  from           String
+  to             String
+  fromLat        Float?
+  fromLng        Float?
+  toLat          Float?
+  toLng          Float?
+  polyline       String?
+  departureTime  DateTime
+  availableSeats Int
+  purpose        String   // OFFICE, COLLEGE, etc.
+  status         String   @default("ACTIVE")
+  createdAt      DateTime @default(now())
+  
+  requests       RideRequest[]
+  bookings       Booking[]
+}
+
+model RideRequest {
+  id        Int      @id @default(autoincrement())
+  rideId    Int
+  ride      Ride     @relation(fields: [rideId], references: [id])
+  riderId   Int
+  seats     Int
+  status    String   @default("PENDING") // PENDING, ACCEPTED, REJECTED, CANCELLED
+  createdAt DateTime @default(now())
+}
+
+model Booking {
+  id        Int      @id @default(autoincrement())
+  rideId    Int
+  ride      Ride     @relation(fields: [rideId], references: [id])
+  riderId   Int
+  rider     User     @relation(fields: [riderId], references: [id])
+  seats     Int
+  status    String   @default("CONFIRMED")
+  createdAt DateTime @default(now())
+  trips     Trip[]
+}
+
+model Trip {
+  id          Int       @id @default(autoincrement())
+  bookingId   Int
+  booking     Booking   @relation(fields: [bookingId], references: [id])
+  status      String    @default("SCHEDULED")
+  startedAt   DateTime?
+  completedAt DateTime?
+}
+
+model Verification {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  type        String    // IDENTITY, DRIVING_LICENCE, RC, INSURANCE
+  documentUrl String?
+  status      String    @default("PENDING") // PENDING, VERIFIED, REJECTED
+  reviewedBy  Int?
+  reviewedAt  DateTime?
+}
