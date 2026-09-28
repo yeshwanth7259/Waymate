@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Alert, SafeAreaView, ScrollView } from 'react-n
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Card, Input } from '../components/ui';
 import { colors } from '../theme/theme';
-import { api } from '../services/api';
+import { api } from '../api/client';
 
 export default function WalletScreen() {
   const [balance, setBalance] = useState(0);
