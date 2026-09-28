@@ -18,7 +18,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
    }
    return ()=>{ if(unsub) unsub(); };
  },[]);
- const sendOtp=async(phone:string)=>{try{return await auth().signInWithPhoneNumber(phone);}catch(e:any){setAuthError(e?.message||'Unable to start phone authentication.');throw e;}};
+ const sendOtp=async(phone:string)=>{try{return await auth().signInWithPhoneNumber(phone);}catch(e:any){throw e;}};
  return <AuthContext.Provider value={{user,profile,loading,authError,refresh,sendOtp,logout:()=>auth().signOut()}}>{children}</AuthContext.Provider>;
 }
 export const useAuth=()=>useContext(AuthContext);
