@@ -2,9 +2,10 @@ services:
   - type: web
     name: waymate-backend
     env: node
+    nodeVersion: 20.11.0
     plan: free
     buildCommand: cd backend && npm install && npm run build
-    startCommand: cd backend && export NODE_ENV=production && npm run start:prod
+    startCommand: cd backend && NODE_ENV=production npm run start:prod
     envVars:
       - key: DATABASE_URL
         sync: false
