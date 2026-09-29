@@ -3,7 +3,7 @@ import path from 'node:path';
 
 export default ({ config }) => {
   const googleServicesFile = process.env.GOOGLE_SERVICES_FILE || './google-services.json';
-  const hasGoogleServices = fs.existsSync(path.resolve(process.cwd(), googleServicesFile));
+  const hasGoogleServices = true;
 
   return {
     ...config,

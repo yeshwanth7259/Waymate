@@ -27,6 +27,7 @@ export const createVehicle = async (req: AuthenticatedRequest, res: Response): P
 
     res.status(201).json(vehicle);
   } catch (error) {
+    console.error("Error creating vehicle:", error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

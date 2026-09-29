@@ -1,0 +1,11 @@
+node_modules
+.env.*
+!.env.example
+dist
+.expo
+android/.gradle
+android/app/build
+android/local.properties
+ios/Pods
+*.keystore
+GoogleService-Info.plist

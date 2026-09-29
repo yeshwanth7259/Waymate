@@ -1,54 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Clock, Users, ShieldCheck, Filter, CheckCircle, Car, Sparkles, AlertCircle, ArrowRight } from 'lucide-react';
-import { Ride, User, Booking } from '../../types';
+import { Ride } from '../../types';
+import { rideApi } from '../../services/rideApi';
+import { bookingApi } from '../../services/bookingApi';
+import { useAuth } from '../../context/AuthContext';
 
 interface FindRideViewProps {
-  rides: Ride[];
-  currentUser: User;
-  onBookRide: (ride: Ride, pickup: string, drop: string, seats: number) => void;
   onSwitchToOffer: () => void;
   initialFrom?: string;
   initialTo?: string;
 }
 
 export const FindRideView: React.FC<FindRideViewProps> = ({
-  rides,
-  currentUser,
-  onBookRide,
   onSwitchToOffer,
   initialFrom = '',
   initialTo = ''
 }) => {
-  const [originQuery, setOriginQuery] = useState(initialFrom || 'HSR');
-  const [destQuery, setDestQuery] = useState(initialTo || 'Whitefield');
+  const { accessToken } = useAuth();
+  const [originQuery, setOriginQuery] = useState(initialFrom);
+  const [destQuery, setDestQuery] = useState(initialTo);
   const [womenOnlyFilter, setWomenOnlyFilter] = useState(false);
   const [coWorkersOnlyFilter, setCoWorkersOnlyFilter] = useState(false);
-  const [selectedRide, setSelectedRide] = useState<Ride | null>(rides[0] || null);
+  
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
   const [seatsRequested, setSeatsRequested] = useState(1);
+  
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
-  const [lastBookedPin, setLastBookedPin] = useState('');
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
-  // Filter rides based on search
-  const filteredRides = rides.filter(ride => {
-    const matchesOrigin = !originQuery || 
-      ride.origin.toLowerCase().includes(originQuery.toLowerCase()) ||
-      ride.stops.some(s => s.name.toLowerCase().includes(originQuery.toLowerCase()));
+  useEffect(() => {
+    handleSearch();
+  }, [originQuery, destQuery]); // Automatically search on change, or could use a button
+
+  const handleSearch = async () => {
+    setLoading(true);
+    setError(null);
+    const res = await rideApi.searchRides({ 
+        from: originQuery, 
+        to: destQuery 
+    }, () => accessToken);
     
-    const matchesDest = !destQuery || 
-      ride.destination.toLowerCase().includes(destQuery.toLowerCase()) ||
-      ride.stops.some(s => s.name.toLowerCase().includes(destQuery.toLowerCase()));
-
-    const matchesWomenOnly = !womenOnlyFilter || ride.allowWomenOnly;
-    const matchesCoWorkers = !coWorkersOnlyFilter || (ride.coWorkersOnly && ride.driver.company?.includes('Infosys'));
-
-    return matchesOrigin && matchesDest && matchesWomenOnly && matchesCoWorkers;
-  });
-
-  const handleConfirmBooking = (ride: Ride) => {
-    onBookRide(ride, ride.origin, ride.destination, seatsRequested);
-    setLastBookedPin(ride.ridePin);
-    setShowBookingSuccess(true);
+    if (res.success && res.data) {
+        setRides(res.data);
+        if (res.data.length > 0) setSelectedRide(res.data[0]);
+    } else {
+        setError(res.message || 'Failed to search rides');
+    }
+    setLoading(false);
   };
+
+  const handleConfirmBooking = async (ride: Ride) => {
+    setBookingLoading(true);
+    setBookingError(null);
+    const res = await bookingApi.requestSeat(ride.id, seatsRequested, () => accessToken);
+    
+    setBookingLoading(false);
+    if (res.success) {
+        setShowBookingSuccess(true);
+    } else {
+        setBookingError(res.message || 'Failed to request seat');
+    }
+  };
+
+  const filteredRides = rides.filter(ride => {
+    const matchesWomenOnly = !womenOnlyFilter || ride.allowWomenOnly;
+    const matchesCoWorkers = !coWorkersOnlyFilter || ride.coWorkersOnly;
+    return matchesWomenOnly && matchesCoWorkers;
+  });
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
@@ -148,12 +171,22 @@ export const FindRideView: React.FC<FindRideViewProps> = ({
             <span>Sorted by corridor route overlap</span>
           </div>
 
-          {filteredRides.length === 0 ? (
+          {loading ? (
+             <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
+               Finding rides...
+             </div>
+          ) : error ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center text-red-600">
+               Something went wrong: {error}
+               <br />
+               <button onClick={handleSearch} className="mt-2 text-xs font-bold underline">Try Again</button>
+            </div>
+          ) : filteredRides.length === 0 ? (
             <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
               <AlertCircle className="mx-auto h-8 w-8 text-slate-400" />
               <h3 className="mt-2 text-sm font-bold text-slate-800">No matching carpools found</h3>
               <p className="mt-1 text-xs text-slate-500">
-                Try broadening your pickup or drop search query (e.g. "HSR" or "ORR").
+                Try broadening your pickup or drop search query.
               </p>
               <button
                 onClick={() => { setOriginQuery(''); setDestQuery(''); setWomenOnlyFilter(false); setCoWorkersOnlyFilter(false); }}
@@ -180,18 +213,18 @@ export const FindRideView: React.FC<FindRideViewProps> = ({
                       {/* Driver info */}
                       <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200">
-                          {ride.driver.name.charAt(0)}
+                          {ride.host?.profile?.fullName?.charAt(0) || 'U'}
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-bold text-slate-900">{ride.driver.name}</span>
+                            <span className="text-sm font-bold text-slate-900">{ride.host?.profile?.fullName || 'Anonymous'}</span>
                             <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded flex items-center gap-0.5">
-                              ★ {ride.driver.rating}
+                              ★ 4.9
                             </span>
                           </div>
                           <div className="text-[11px] text-slate-500 flex items-center gap-1">
                             <ShieldCheck className="h-3 w-3 text-emerald-600" />
-                            <span>{ride.driver.company || 'Verified IT Professional'}</span>
+                            <span>Verified IT Professional</span>
                           </div>
                         </div>
                       </div>
@@ -199,7 +232,7 @@ export const FindRideView: React.FC<FindRideViewProps> = ({
 
                     <div className="text-right">
                       <div className="font-mono text-lg font-extrabold text-slate-900 tabular-nums">
-                        ₹{ride.pricePerSeat}
+                        ₹65
                       </div>
                       <div className="text-[10px] text-slate-400">per seat · no surge</div>
                     </div>
@@ -210,28 +243,23 @@ export const FindRideView: React.FC<FindRideViewProps> = ({
                     <div className="flex items-center justify-between font-semibold text-slate-800">
                       <div className="flex items-center gap-1.5 truncate max-w-[200px]">
                         <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                        <span className="truncate">{ride.origin}</span>
+                        <span className="truncate">{ride.from}</span>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-400 shrink-0 mx-2" />
                       <div className="flex items-center gap-1.5 truncate max-w-[200px]">
                         <span className="h-2 w-2 rounded-full bg-sky-500 shrink-0" />
-                        <span className="truncate">{ride.destination}</span>
+                        <span className="truncate">{ride.to}</span>
                       </div>
                     </div>
 
                     <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200/50">
                       <div className="flex items-center gap-2">
                         <Clock className="h-3 w-3 text-slate-400" />
-                        <span>Departs: <strong>{ride.departureTime}</strong></span>
-                        {ride.isRecurring && (
-                          <span className="text-emerald-700 font-medium bg-emerald-100/50 px-1.5 py-0.2 rounded text-[10px]">
-                            Daily Mon-Fri
-                          </span>
-                        )}
+                        <span>Departs: <strong>{new Date(ride.departureTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</strong></span>
                       </div>
                       <div className="flex items-center gap-1 font-medium text-slate-700">
                         <Users className="h-3 w-3 text-slate-400" />
-                        <span><strong>{ride.availableSeats}</strong> of {ride.totalSeats} seats left</span>
+                        <span><strong>{ride.availableSeats}</strong> seats left</span>
                       </div>
                     </div>
                   </div>
@@ -240,18 +268,8 @@ export const FindRideView: React.FC<FindRideViewProps> = ({
                   <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
                     <div className="flex items-center gap-2">
                       <Car className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{ride.vehicle.make} {ride.vehicle.model} ({ride.vehicle.plateNumber})</span>
-                      {ride.vehicle.isEv && (
-                        <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px]">
-                          EV
-                        </span>
-                      )}
+                      <span>{ride.vehicle?.brand} {ride.vehicle?.model}</span>
                     </div>
-                    {ride.allowWomenOnly && (
-                      <span className="text-pink-600 font-medium text-[10px]">
-                        Women Only Commute
-                      </span>
-                    )}
                   </div>
 
                 </div>
@@ -275,48 +293,23 @@ export const FindRideView: React.FC<FindRideViewProps> = ({
                   </span>
                 </div>
                 <h3 className="text-base font-bold text-slate-900 mt-1">
-                  {selectedRide.corridor}
+                  {selectedRide.from} → {selectedRide.to}
                 </h3>
               </div>
 
               {/* Driver & Car Snapshot */}
               <div className="mt-4 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white font-bold">
-                  {selectedRide.driver.name.charAt(0)}
+                  {selectedRide.host?.profile?.fullName?.charAt(0) || 'U'}
                 </div>
                 <div>
                   <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                    <span>{selectedRide.driver.name}</span>
-                    <span className="text-xs text-emerald-700">★ {selectedRide.driver.rating}</span>
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    {selectedRide.driver.company}
+                    <span>{selectedRide.host?.profile?.fullName || 'Anonymous'}</span>
+                    <span className="text-xs text-emerald-700">★ 4.9</span>
                   </div>
                   <div className="text-[11px] text-slate-400 mt-0.5">
-                    {selectedRide.vehicle.color} {selectedRide.vehicle.make} {selectedRide.vehicle.model} · {selectedRide.vehicle.plateNumber}
+                    {selectedRide.vehicle?.color} {selectedRide.vehicle?.brand} {selectedRide.vehicle?.model}
                   </div>
-                </div>
-              </div>
-
-              {/* Waypoint Stops */}
-              <div className="mt-4 rounded-lg bg-slate-50 p-3.5 border border-slate-100">
-                <div className="text-[11px] font-semibold text-slate-500 mb-2">
-                  Corridor Waypoints & Timing:
-                </div>
-                <div className="space-y-2">
-                  {selectedRide.stops.map((stop, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className={`h-2 w-2 rounded-full shrink-0 ${
-                          idx === 0 ? 'bg-emerald-500' : idx === selectedRide.stops.length - 1 ? 'bg-sky-500' : 'bg-slate-300'
-                        }`} />
-                        <span className="font-medium text-slate-800 truncate">{stop.name}</span>
-                      </div>
-                      <span className="font-mono text-[11px] text-slate-500 tabular-nums shrink-0 ml-2">
-                        {stop.timeEstimate}
-                      </span>
-                    </div>
-                  ))}
                 </div>
               </div>
 
@@ -345,21 +338,20 @@ export const FindRideView: React.FC<FindRideViewProps> = ({
                 <div className="flex items-center justify-between text-xs border-t border-slate-100 pt-2">
                   <span className="text-slate-600">Total Share Amount:</span>
                   <span className="font-mono font-bold text-base text-slate-900 tabular-nums">
-                    ₹{selectedRide.pricePerSeat * seatsRequested}
+                    ₹{65 * seatsRequested}
                   </span>
                 </div>
 
-                <div className="rounded-md bg-emerald-50 p-2.5 text-[11px] text-emerald-800 border border-emerald-200/50">
-                  <strong>Non-Commercial Fuel Cost Sharing:</strong> You are reimbursing fuel and toll expenses directly. No driver commercial markup.
-                </div>
+                {bookingError && <div className="text-xs text-red-600 font-bold">{bookingError}</div>}
 
                 {/* Instant Seat Request Button */}
                 <button
                   onClick={() => handleConfirmBooking(selectedRide)}
-                  className="w-full rounded-lg bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                  disabled={bookingLoading}
+                  className="w-full rounded-lg bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <CheckCircle className="h-4 w-4" />
-                  <span>Request Seat Now (Instant Ride PIN)</span>
+                  <span>{bookingLoading ? 'Requesting...' : 'Request Seat'}</span>
                 </button>
               </div>
 
@@ -382,39 +374,14 @@ export const FindRideView: React.FC<FindRideViewProps> = ({
             </div>
 
             <h3 className="text-center text-lg font-bold text-slate-900">
-              Seat Confirmed!
+              Seat Requested!
             </h3>
             <p className="text-center text-xs text-slate-500 mt-1">
-              Your corridor ride has been reserved with {selectedRide?.driver.name}.
+              Your request has been sent to {selectedRide?.host?.profile?.fullName || 'the host'}. You will be notified when they accept.
             </p>
 
-            <div className="mt-5 rounded-xl bg-slate-900 p-4 text-center text-white">
-              <div className="text-xs text-slate-400">Your 4-Digit Boarding Ride PIN</div>
-              <div className="font-mono text-3xl font-extrabold tracking-widest text-emerald-400 mt-1">
-                {lastBookedPin}
-              </div>
-              <div className="text-[10px] text-slate-400 mt-1">
-                Share this PIN with your driver when boarding to activate your trip.
-              </div>
-            </div>
-
-            <div className="mt-5 text-xs text-slate-600 space-y-1.5 border-t border-slate-100 pt-3">
-              <div className="flex justify-between">
-                <span>Vehicle:</span>
-                <span className="font-semibold text-slate-800">{selectedRide?.vehicle.make} {selectedRide?.vehicle.model} ({selectedRide?.vehicle.plateNumber})</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Departure:</span>
-                <span className="font-semibold text-slate-800">{selectedRide?.departureTime}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Fare Amount:</span>
-                <span className="font-semibold text-slate-800">₹{(selectedRide?.pricePerSeat || 0) * seatsRequested}</span>
-              </div>
-            </div>
-
             <button
-              onClick={() => setShowBookingSuccess(false)}
+              onClick={() => { setShowBookingSuccess(false); onSwitchToOffer(); }}
               className="mt-6 w-full rounded-lg bg-emerald-600 py-2.5 text-xs font-semibold text-white hover:bg-emerald-700 transition-colors"
             >
               Done & View in My Rides

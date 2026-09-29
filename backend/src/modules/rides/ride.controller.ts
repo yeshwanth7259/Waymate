@@ -2,6 +2,7 @@ import { Response } from 'express';
 import prisma from '../../config/prisma';
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 import { calculateMatchScore } from '../matching/matching.service';
+import * as rideService from './ride.service';
 
 export const offerRide = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -11,30 +12,28 @@ export const offerRide = async (req: AuthenticatedRequest, res: Response): Promi
 
     const { vehicleId, from, to, fromLat, fromLng, toLat, toLng, polyline, departureTime, availableSeats, purpose } = req.body;
 
-    // Ensure vehicle belongs to user
-    const vehicle = await prisma.vehicle.findFirst({ where: { id: vehicleId, userId: user.id } });
-    if (!vehicle) { res.status(400).json({ error: 'Invalid vehicle' }); return; }
-
-    const ride = await prisma.ride.create({
-      data: {
-        hostId: user.id,
-        vehicleId,
-        from,
-        to,
-        fromLat,
-        fromLng,
-        toLat,
-        toLng,
-        polyline,
-        departureTime: new Date(departureTime),
-        availableSeats,
-        purpose
-      }
+    const result = await rideService.createRide({
+      hostId: user.id,
+      vehicleId,
+      from,
+      to,
+      fromLat,
+      fromLng,
+      toLat,
+      toLng,
+      polyline,
+      departureTime: new Date(departureTime),
+      availableSeats,
+      purpose
     });
 
-    res.status(201).json(ride);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(201).json(result);
+  } catch (error: any) {
+    if (error.message === 'INVALID_VEHICLE') {
+      res.status(400).json({ error: 'Invalid vehicle or does not belong to you' });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
 };
 
@@ -82,4 +81,20 @@ export const getRide = async (req: AuthenticatedRequest, res: Response): Promise
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
+};
+
+export const getMyRides = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const firebaseUid = req.user?.uid;
+      const user = await prisma.user.findUnique({ where: { firebaseUid: firebaseUid! } });
+      if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+  
+      const rides = await prisma.ride.findMany({
+        where: { hostId: user.id },
+        include: { vehicle: true }
+      });
+      res.json(rides);
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
 };

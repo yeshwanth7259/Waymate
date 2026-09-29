@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "WayMate",
+    "slug": "waymate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "waymate",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "WayMate uses your location during an active trip to share your live position with authorized trip participants.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "WayMate uses your location during an active trip to share your live position with authorized trip participants."
+      }
+    },
+    "android": {
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ],
+      "package": "com.waymate.app",
+      "googleServicesFile": "./google-services.json"
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      "expo-location"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3465ba9c-c19d-47a7-9de4-e6456046b997"
+      }
+    },
+    "owner": "waymates"
+  }
+}

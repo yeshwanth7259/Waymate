@@ -1,0 +1,238 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum Gender { MALE FEMALE OTHER }
+enum KycStatus { UNVERIFIED PENDING VERIFIED REJECTED }
+enum DocumentType { IDENTITY SELFIE DRIVING_LICENSE RC INSURANCE }
+enum DocumentStatus { PENDING VERIFIED REJECTED }
+enum VehicleType { CAR BIKE }
+enum RideStatus { OPEN FULL CANCELLED COMPLETED }
+enum RequestStatus { PENDING ACCEPTED REJECTED CANCELLED }
+enum BookingStatus { PENDING CONFIRMED CANCELLED COMPLETED }
+enum TripStatus { SCHEDULED IN_PROGRESS COMPLETED CANCELLED }
+enum LocationRole { HOST RIDER }
+
+model User {
+  id String @id @default(cuid())
+  firebaseUid String @unique
+  phone String?
+  email String?
+  firstName String?
+  lastName String?
+  gender Gender?
+  avatarUrl String?
+  rating Float @default(0)
+  ratingCount Int @default(0)
+  verified Boolean @default(false)
+  kycStatus KycStatus @default(UNVERIFIED)
+  kycSubmittedAt DateTime?
+  kycVerifiedAt DateTime?
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  vehicles Vehicle[]
+  hostedRides Ride[] @relation("HostRides")
+  requests RideRequest[]
+  bookings Booking[]
+  locations TripLocation[]
+  emergencyContacts EmergencyContact[]
+  documents KycDocument[]
+  safetyReports SafetyReport[] @relation("ReporterReports")
+  assignedReports SafetyReport[] @relation("AssignedReports")
+  sosEvents SosEvent[]
+}
+
+model KycDocument {
+  id String @id @default(cuid())
+  userId String
+  type DocumentType
+  filePath String
+  mimeType String
+  originalName String
+  status DocumentStatus @default(PENDING)
+  rejectionReason String?
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  @@unique([userId, type])
+  @@index([status, createdAt])
+}
+
+model Vehicle {
+  id String @id @default(cuid())
+  ownerId String
+  type VehicleType
+  make String?
+  model String?
+  registrationNumber String
+  color String?
+  seats Int @default(1)
+  verified Boolean @default(false)
+  isActive Boolean @default(true)
+  insuranceExpiry DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  owner User @relation(fields:[ownerId], references:[id], onDelete:Cascade)
+  rides Ride[]
+  documents VehicleDocument[]
+  @@index([ownerId])
+}
+
+model VehicleDocument {
+  id String @id @default(cuid())
+  vehicleId String
+  type DocumentType
+  filePath String
+  mimeType String
+  originalName String
+  status DocumentStatus @default(PENDING)
+  rejectionReason String?
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  vehicle Vehicle @relation(fields:[vehicleId], references:[id], onDelete:Cascade)
+  @@unique([vehicleId, type])
+  @@index([status, createdAt])
+}
+
+model Ride {
+  id String @id @default(cuid())
+  hostId String
+  vehicleId String
+  origin String
+  destination String
+  originLat Float?
+  originLng Float?
+  destinationLat Float?
+  destinationLng Float?
+  departureTime DateTime
+  availableSeats Int
+  price Float @default(0)
+  womenOnly Boolean @default(false)
+  status RideStatus @default(OPEN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  host User @relation("HostRides", fields:[hostId], references:[id], onDelete:Cascade)
+  vehicle Vehicle @relation(fields:[vehicleId], references:[id])
+  requests RideRequest[]
+  bookings Booking[]
+  trip Trip?
+  @@index([hostId, departureTime])
+  @@index([origin, destination, departureTime])
+  @@index([womenOnly, status, departureTime])
+}
+
+model RideRequest {
+  id String @id @default(cuid())
+  rideId String
+  riderId String
+  seats Int @default(1)
+  status RequestStatus @default(PENDING)
+  safetyNote String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ride Ride @relation(fields:[rideId], references:[id], onDelete:Cascade)
+  rider User @relation(fields:[riderId], references:[id], onDelete:Cascade)
+  booking Booking?
+  @@unique([rideId, riderId])
+  @@index([riderId, status])
+}
+
+model Booking {
+  id String @id @default(cuid())
+  rideId String
+  riderId String
+  requestId String? @unique
+  seats Int @default(1)
+  status BookingStatus @default(PENDING)
+  amount Float @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ride Ride @relation(fields:[rideId], references:[id], onDelete:Cascade)
+  rider User @relation(fields:[riderId], references:[id], onDelete:Cascade)
+  request RideRequest? @relation(fields:[requestId], references:[id])
+  @@index([riderId, status])
+}
+
+model Trip {
+  id String @id @default(cuid())
+  rideId String @unique
+  status TripStatus @default(SCHEDULED)
+  startedAt DateTime?
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  ride Ride @relation(fields:[rideId], references:[id], onDelete:Cascade)
+  locations TripLocation[]
+  @@index([status])
+}
+
+model TripLocation {
+  id String @id @default(cuid())
+  tripId String
+  userId String
+  role LocationRole
+  latitude Float
+  longitude Float
+  accuracy Float?
+  heading Float?
+  speed Float?
+  timestamp DateTime
+  createdAt DateTime @default(now())
+  trip Trip @relation(fields:[tripId], references:[id], onDelete:Cascade)
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  @@index([tripId, timestamp])
+  @@index([tripId, userId, timestamp])
+}
+
+model EmergencyContact {
+  id String @id @default(cuid())
+  userId String
+  name String
+  phone String
+  relation String?
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+}
+
+model SafetyPolicy {
+  id String @id @default("default")
+  womenSafetyEnabled Boolean @default(true)
+  requireVerifiedHostForWomenOnly Boolean @default(true)
+  requireVerifiedVehicleForWomenOnly Boolean @default(true)
+  requireFemaleCompanionForSoloFemaleRider Boolean @default(true)
+  femaleCompanionMinimum Int @default(2)
+  requireKycForBooking Boolean @default(true)
+  requireKycForOffering Boolean @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model SosEvent {
+  id String @id @default(cuid())
+  userId String
+  tripId String?
+  latitude Float?
+  longitude Float?
+  message String?
+  status String @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  @@index([status, createdAt])
+  @@index([tripId, createdAt])
+}
+
+model SafetyReport {
+  id String @id @default(cuid())
+  reporterId String
+  assignedToId String?
+  tripId String?
+  category String
+  description String
+  status String @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reporter User @relation("ReporterReports", fields:[reporterId], references:[id], onDelete:Cascade)
+  assignedTo User? @relation("AssignedReports", fields:[assignedToId], references:[id], onDelete:SetNull)
+}

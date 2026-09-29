@@ -86,3 +86,19 @@ export const acceptRequest = async (req: AuthenticatedRequest, res: Response): P
       res.status(500).json({ error: 'Internal server error' });
     }
   };
+
+export const getMyBookings = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const firebaseUid = req.user?.uid;
+      const user = await prisma.user.findUnique({ where: { firebaseUid: firebaseUid! } });
+      if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+  
+      const bookings = await prisma.booking.findMany({
+        where: { riderId: user.id },
+        include: { ride: { include: { host: { include: { profile: true } }, vehicle: true } } }
+      });
+      res.json(bookings);
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+};

@@ -1,4 +1,5 @@
-import * as admin from 'firebase-admin';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -10,24 +11,33 @@ const serviceAccountPath = path.resolve(__dirname, '../../../firebase-service-ac
 try {
   if (fs.existsSync(serviceAccountPath)) {
     const serviceAccount = require(serviceAccountPath);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    });
+    if (getApps().length === 0) {
+      initializeApp({
+        credential: cert(serviceAccount)
+      });
+    }
     console.log("Firebase Admin initialized using service account JSON.");
   } else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      }),
-    });
+    if (getApps().length === 0) {
+      initializeApp({
+        credential: cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        }),
+      });
+    }
     console.log("Firebase Admin initialized using Environment Variables.");
   } else {
-    console.warn("Firebase credentials not found. Auth features may fail.");
+    if (process.env.NODE_ENV !== 'development') {
+      console.error("CRITICAL ERROR: Firebase credentials not found in staging/production environment.");
+      process.exit(1);
+    }
+    console.warn("Firebase credentials not found. Using development bypass.");
   }
 } catch (error) {
   console.error("Firebase initialization error", error);
 }
 
-export default admin;
+export const auth = getApps().length > 0 ? getAuth() : undefined;
+

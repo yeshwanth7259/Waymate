@@ -16,17 +16,18 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  profile     Profile?
-  vehicles    Vehicle[]
-  ridesOffered Ride[]   @relation("HostRides")
-  bookings    Booking[]
+  profile       Profile?
+  vehicles      Vehicle[]
+  ridesOffered  Ride[]         @relation("HostRides")
+  bookings      Booking[]
   verifications Verification[]
+  wallet        Wallet?
 }
 
 model Profile {
-  id                 Int      @id @default(autoincrement())
-  userId             Int      @unique
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 Int     @id @default(autoincrement())
+  userId             Int     @unique
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   fullName           String?
   profilePhoto       String?
   gender             String?
@@ -37,16 +38,16 @@ model Profile {
   college            String?
   company            String?
   emergencyContact   String?
-  rating             Float    @default(0.0)
-  totalRides         Int      @default(0)
-  verificationStatus String   @default("PENDING")
+  rating             Float   @default(0.0)
+  totalRides         Int     @default(0)
+  verificationStatus String  @default("PENDING")
 }
 
 model Vehicle {
   id                 Int      @id @default(autoincrement())
   userId             Int
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type               String   // CAR or BIKE
+  type               String // CAR or BIKE
   brand              String
   model              String
   registrationNumber String
@@ -73,12 +74,17 @@ model Ride {
   polyline       String?
   departureTime  DateTime
   availableSeats Int
-  purpose        String   // OFFICE, COLLEGE, etc.
+  purpose        String // OFFICE, COLLEGE, etc.
   status         String   @default("ACTIVE")
   createdAt      DateTime @default(now())
-  
-  requests       RideRequest[]
-  bookings       Booking[]
+
+  requests RideRequest[]
+  bookings Booking[]
+  trip     Trip?
+
+  @@index([hostId])
+  @@index([departureTime])
+  @@index([status])
 }
 
 model RideRequest {
@@ -100,25 +106,62 @@ model Booking {
   seats     Int
   status    String   @default("CONFIRMED")
   createdAt DateTime @default(now())
-  trips     Trip[]
+
+  @@index([riderId])
+  @@index([rideId])
+  @@index([status])
+}
+
+enum TripStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
 
 model Trip {
-  id          Int       @id @default(autoincrement())
-  bookingId   Int
-  booking     Booking   @relation(fields: [bookingId], references: [id])
-  status      String    @default("SCHEDULED")
+  id          Int        @id @default(autoincrement())
+  rideId      Int        @unique
+  ride        Ride       @relation(fields: [rideId], references: [id])
+  status      TripStatus @default(SCHEDULED)
   startedAt   DateTime?
   completedAt DateTime?
+  cancelledAt DateTime?
+
+  @@index([rideId])
+  @@index([status])
 }
 
 model Verification {
   id          Int       @id @default(autoincrement())
   userId      Int
   user        User      @relation(fields: [userId], references: [id])
-  type        String    // IDENTITY, DRIVING_LICENCE, RC, INSURANCE
+  type        String // IDENTITY, DRIVING_LICENCE, RC, INSURANCE
   documentUrl String?
   status      String    @default("PENDING") // PENDING, VERIFIED, REJECTED
   reviewedBy  Int?
   reviewedAt  DateTime?
+}
+
+model Wallet {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Float    @default(0.0)
+  bankInfo  String?  // Could be encrypted JSON string or linked account ID
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  walletId    Int
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  amount      Float
+  type        String   // DEPOSIT, WITHDRAWAL, RIDE_PAYMENT, RIDE_EARNING
+  status      String   @default("COMPLETED") // PENDING, COMPLETED, FAILED
+  referenceId String?  // rideId or external payment ID
+  createdAt   DateTime @default(now())
 }
