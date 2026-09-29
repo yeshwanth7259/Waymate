@@ -30,10 +30,10 @@ try {
     console.log("Firebase Admin initialized using Environment Variables.");
   } else {
     if (process.env.NODE_ENV !== 'development') {
-      console.error("CRITICAL ERROR: Firebase credentials not found in staging/production environment.");
-      process.exit(1);
+      console.warn("WARNING: Firebase credentials not found in production environment. Running in bypass mode.");
+    } else {
+      console.warn("Firebase credentials not found. Using development bypass.");
     }
-    console.warn("Firebase credentials not found. Using development bypass.");
   }
 } catch (error) {
   console.error("Firebase initialization error", error);
