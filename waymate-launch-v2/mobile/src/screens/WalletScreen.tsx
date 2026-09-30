@@ -60,44 +60,44 @@ export default function WalletScreen() {
       <ScrollView contentContainerStyle={s.content}>
         <View style={s.header}>
           <Text style={s.title}>Driver Center</Text>
-          <Text style={s.subtitle}>Earnings, wallet & payouts</Text>
+          <Text style={s.subtitle}>Cash earnings & commission dues</Text>
         </View>
 
         <View style={s.balanceCard}>
-          <Text style={s.label}>THIS WEEK</Text>
-          <Text style={s.balance}>₹{data.thisWeek.net.toLocaleString()}</Text>
-          <Text style={s.payoutText}>estimated driver earnings after commission</Text>
+          <Text style={s.label}>CASH COLLECTED THIS WEEK</Text>
+          <Text style={s.balance}>₹{data.thisWeek.gross.toLocaleString()}</Text>
           
           <View style={s.breakdownRow}>
             <View style={s.breakdownItem}>
-              <Text style={s.breakdownLabel}>Gross fares</Text>
-              <Text style={s.breakdownValue}>₹{data.thisWeek.gross}</Text>
+              <Text style={s.breakdownLabel}>Your Share</Text>
+              <Text style={s.breakdownValue}>₹{data.thisWeek.net}</Text>
             </View>
             <View style={s.breakdownItem}>
-              <Text style={s.breakdownLabel}>Commission</Text>
+              <Text style={s.breakdownLabel}>WayMate Comm.</Text>
               <Text style={[s.breakdownValue, {color: colors.amberSoft}]}>-₹{data.thisWeek.commission}</Text>
-            </View>
-            <View style={s.breakdownItem}>
-              <Text style={s.breakdownLabel}>Pending</Text>
-              <Text style={s.breakdownValue}>₹{data.pending}</Text>
             </View>
           </View>
         </View>
 
         <Card style={s.card}>
-          <Text style={s.cardTitle}>Weekly payout cycle</Text>
-          <Text style={s.desc}>Eligible driver earnings are scheduled for the weekly settlement cycle.</Text>
-          <View style={s.payoutRow}>
-            <Ionicons name="calendar" size={20} color={colors.primary} />
+          <Text style={s.cardTitle}>Commission Dues</Text>
+          <View style={s.walletRow}>
             <View>
-              <Text style={s.payoutLabel}>Next scheduled payout</Text>
-              <Text style={s.payoutDate}>05 Oct 2026</Text>
+              <Text style={s.walletLabel}>Pending Dues</Text>
+              <Text style={s.walletValue}>₹{data.pending.toLocaleString()}</Text>
             </View>
           </View>
+          
+          <Button 
+            title={loading ? 'Processing...' : 'Pay Commission Dues'} 
+            onPress={processPayout} 
+            disabled={loading || data.pending <= 0}
+          />
+          <Text style={s.warning}>Clear your dues to continue receiving ride requests.</Text>
         </Card>
 
         <Card style={s.card}>
-          <Text style={s.cardTitle}>Weekly earnings</Text>
+          <Text style={s.cardTitle}>Weekly cash collection</Text>
           <Text style={s.desc}>Last 6 weeks</Text>
           <View style={s.graph}>
             {data.weeks.map((val: number, i: number) => {
@@ -113,52 +113,6 @@ export default function WalletScreen() {
           <View style={s.graphLabels}>
             {['Aug','Sep','Sep','Sep','Oct','Oct'].map((lbl, i) => <Text key={i} style={s.graphLabel}>{lbl}</Text>)}
           </View>
-        </Card>
-
-        <Card style={s.card}>
-          <Text style={s.cardTitle}>Wallet</Text>
-          <View style={s.walletRow}>
-            <View>
-              <Text style={s.walletLabel}>Available</Text>
-              <Text style={s.walletValue}>₹{data.available.toLocaleString()}</Text>
-            </View>
-            <View>
-              <Text style={s.walletLabel}>Pending</Text>
-              <Text style={s.walletValue}>₹{data.pending.toLocaleString()}</Text>
-            </View>
-          </View>
-          
-          <Button 
-            title={loading ? 'Processing...' : 'Withdraw to Bank'} 
-            onPress={processPayout} 
-            disabled={loading || data.available <= 0 || !bankInfo}
-          />
-          {!bankInfo && <Text style={s.warning}>Link a bank account to withdraw funds.</Text>}
-        </Card>
-
-        <Card style={s.card}>
-          <View style={s.bankHeader}>
-            <View style={s.iconWrap}>
-              <Ionicons name="business" size={24} color={colors.primary} />
-            </View>
-            <View style={{flex: 1}}>
-              <Text style={s.cardTitle}>Payout Account</Text>
-              <Text style={s.desc}>Link your UPI or Bank Account for instant withdrawals.</Text>
-            </View>
-          </View>
-          
-          <Input 
-            label="ACCOUNT NUMBER / UPI ID" 
-            value={bankInfo} 
-            onChangeText={setBankInfo}
-            placeholder="e.g. 1234567890 or user@upi"
-          />
-          <Button 
-            title={loading ? 'Saving...' : 'Save Bank Details'} 
-            onPress={saveBankInfo} 
-            disabled={loading || !bankInfo}
-            secondary
-          />
         </Card>
       </ScrollView>
     </SafeAreaView>
