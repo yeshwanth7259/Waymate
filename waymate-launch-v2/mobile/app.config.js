@@ -7,7 +7,7 @@ export default ({ config }) => {
 
   return {
     ...config,
-    owner: 'waymates',
+    owner: 'wowinteriorss-team',
     name: 'WayMate',
     slug: 'waymate',
     version: '1.0.0',
@@ -47,7 +47,7 @@ export default ({ config }) => {
     extra: { 
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'http://10.0.2.2:3001/api',
       eas: {
-        projectId: "3465ba9c-c19d-47a7-9de4-e6456046b997"
+        projectId: "9815568c-034b-40b4-9bbf-a06caa391143"
       }
     }
   };

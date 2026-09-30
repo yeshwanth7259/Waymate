@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing } from '../theme/theme';
+import { colors, radius, spacing, shadows } from '../theme/theme';
 
 export function Button({ title, onPress, secondary = false, danger = false, disabled = false, icon }: { title: string; onPress: () => void; secondary?: boolean; danger?: boolean; disabled?: boolean; icon?: keyof typeof Ionicons.glyphMap }) {
   return (
@@ -20,8 +20,8 @@ export function Input({ label, icon, ...props }: any) {
   return <View style={{ marginBottom: spacing.md }}>
     {label && <Text style={styles.label}>{label}</Text>}
     <View style={styles.inputWrap}>
-      {icon && <Ionicons name={icon} size={19} color={colors.green} style={{ marginRight: 10 }} />}
-      <TextInput {...props} placeholderTextColor="#9AA9B6" style={[styles.input, props.multiline && { minHeight: 90, textAlignVertical: 'top' }]} />
+      {icon && <Ionicons name={icon} size={20} color={colors.primary} style={{ marginRight: 12 }} />}
+      <TextInput {...props} placeholderTextColor={colors.mutedLight} style={[styles.input, props.multiline && { minHeight: 90, textAlignVertical: 'top' }]} />
     </View>
   </View>;
 }
@@ -48,27 +48,27 @@ export function RouteRow({ from, to, time }: { from: string; to: string; time?: 
 export function Loading({ label = 'Loading WayMate…' }: { label?: string }) { return <View style={styles.loading}><ActivityIndicator size="large" color={colors.green} /><Text style={styles.loadingText}>{label}</Text></View>; }
 
 export const styles = StyleSheet.create({
-  btn: { minHeight: 50, backgroundColor: colors.green, borderRadius: radius.md, paddingHorizontal: 18, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', marginVertical: 5 },
-  secondary: { backgroundColor: colors.greenSoft, borderWidth: 1, borderColor: '#BEE6CF' },
-  danger: { backgroundColor: colors.red },
-  disabled: { opacity: 0.45 },
-  btnText: { color: colors.white, fontSize: 15, fontWeight: '900' },
-  label: { fontSize: 12, color: colors.muted, fontWeight: '800', marginBottom: 7 },
-  inputWrap: { minHeight: 52, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center' },
-  input: { flex: 1, color: colors.text, fontSize: 15, fontWeight: '600', paddingVertical: 13 },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, marginBottom: spacing.md },
-  iconButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  badge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 20 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', marginTop: spacing.lg, marginBottom: spacing.sm },
-  sectionTitle: { fontSize: 20, color: colors.navy, fontWeight: '900' },
-  sectionSubtitle: { fontSize: 12, color: colors.muted, marginTop: 3 },
-  link: { color: colors.greenDark, fontWeight: '900', fontSize: 12 },
-  routeRow: { flexDirection: 'row', alignItems: 'center', minHeight: 58 },
-  routeDots: { width: 20, alignItems: 'center' },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  routeLine: { width: 1, height: 20, backgroundColor: colors.border },
-  routeText: { color: colors.text, fontSize: 14, fontWeight: '700', marginVertical: 2 },
-  routeTime: { color: colors.muted, fontSize: 11, fontWeight: '800' },
+  btn: { minHeight: 56, backgroundColor: colors.primary, borderRadius: radius.xxl, paddingHorizontal: 24, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', marginVertical: 8, ...shadows.glow },
+  secondary: { backgroundColor: colors.primarySoft, borderWidth: 0, ...shadows.sm },
+  danger: { backgroundColor: colors.red, ...shadows.sm },
+  disabled: { opacity: 0.5, ...shadows.sm },
+  btnText: { color: colors.white, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
+  label: { fontSize: 13, color: colors.navy, fontWeight: '700', marginBottom: 8, marginLeft: 4 },
+  inputWrap: { minHeight: 56, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radius.xl, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center' },
+  input: { flex: 1, color: colors.text, fontSize: 16, fontWeight: '500', paddingVertical: 14 },
+  card: { backgroundColor: colors.white, borderRadius: radius.xl, padding: spacing.xl, marginBottom: spacing.lg, ...shadows.md },
+  iconButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', ...shadows.sm },
+  badge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.xxl },
+  sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', marginTop: spacing.xl, marginBottom: spacing.md, paddingHorizontal: 4 },
+  sectionTitle: { fontSize: 22, color: colors.navy2, fontWeight: '800', letterSpacing: -0.5 },
+  sectionSubtitle: { fontSize: 14, color: colors.muted, marginTop: 4 },
+  link: { color: colors.primary, fontWeight: '700', fontSize: 14 },
+  routeRow: { flexDirection: 'row', alignItems: 'center', minHeight: 64 },
+  routeDots: { width: 24, alignItems: 'center', marginRight: 4 },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  routeLine: { width: 2, height: 24, backgroundColor: colors.border, marginVertical: 2 },
+  routeText: { color: colors.text, fontSize: 16, fontWeight: '600', marginVertical: 3 },
+  routeTime: { color: colors.muted, fontSize: 13, fontWeight: '700' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
-  loadingText: { marginTop: 10, color: colors.muted, fontWeight: '700' },
+  loadingText: { marginTop: 14, color: colors.muted, fontWeight: '600', fontSize: 15 },
 });
