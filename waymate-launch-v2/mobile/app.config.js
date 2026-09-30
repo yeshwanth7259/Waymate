@@ -15,9 +15,9 @@ export default ({ config }) => {
     scheme: 'waymate',
     userInterfaceStyle: 'light',
     splash: {
-      image: './assets/splash-icon.png',
-      resizeMode: 'contain',
-      backgroundColor: '#062C45'
+      image: './assets/custom_splash.jpg',
+      resizeMode: 'cover',
+      backgroundColor: '#F8F9FB'
     },
     android: {
       ...(config.android || {}),
