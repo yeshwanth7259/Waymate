@@ -83,6 +83,6 @@ export const updateMe = async (req: AuthenticatedRequest, res: Response): Promis
     res.json({ message: 'Profile updated', profile: updatedProfile });
   } catch (error) {
     console.error('updateMe error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) });
   }
 };
