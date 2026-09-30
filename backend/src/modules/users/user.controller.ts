@@ -74,13 +74,15 @@ export const updateMe = async (req: AuthenticatedRequest, res: Response): Promis
     }
 
     // Update Profile
-    const updatedProfile = await prisma.profile.update({
+    const updatedProfile = await prisma.profile.upsert({
       where: { userId: user.id },
-      data: { fullName, gender, city, bio, occupation }
+      create: { userId: user.id, fullName, gender, city, bio, occupation },
+      update: { fullName, gender, city, bio, occupation }
     });
 
     res.json({ message: 'Profile updated', profile: updatedProfile });
   } catch (error) {
+    console.error('updateMe error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
