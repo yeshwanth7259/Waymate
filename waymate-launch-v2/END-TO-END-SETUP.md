@@ -67,7 +67,7 @@ The phone and development computer must be on the same network. Do not use `loca
 ## Production API
 
 ```env
-EXPO_PUBLIC_API_BASE_URL=https://api.your-waymate-domain.com/api
+EXPO_PUBLIC_API_BASE_URL=https://waymate-backend-g17d.onrender.com/api
 APP_ENV=production
 ```
 
@@ -84,7 +84,7 @@ The repository-root `render.yaml` deploys the shared API from `waymate-launch-v2
 - `ADMIN_UIDS`: optional comma-separated Firebase UIDs for admin access.
 - `NODE_ENV=production` and `DOCUMENT_STORAGE=firebase`.
 
-Render builds with `npm install && npx prisma generate && npm run build`, starts with `npm start`, and checks `/api/health`. After deployment, verify the configured Render API's `/api/health` endpoint before pointing the website and Android app at it. The production runtime targets `waymate_v2`; keep the Render `DATABASE_URL` pointed at the approved Supabase project. Do not use `prisma db push` against production.
+Render builds with `npm install && npx prisma generate && npm run build`, starts with `npm start`, and checks `/api/health`. The current service is `https://waymate-backend-g17d.onrender.com`; its `/api/health` endpoint returned HTTP 200 during the latest deployment check. The production runtime targets `waymate_v2`; keep the Render `DATABASE_URL` pointed at the approved Supabase project. Do not use `prisma db push` against production.
 
 ## Public website
 
@@ -104,8 +104,8 @@ The repository-root `vercel.json` defines the seven Vercel Services from the dep
 
 Configure environment variables for the services in the Vercel project:
 
-- `web` and `admin`: Firebase Web app values `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and `VITE_FIREBASE_APP_ID`; set `VITE_API_BASE_URL` to `https://<vercel-domain>/api`.
-- `admin`: set `VITE_SOCKET_URL` to `https://<vercel-domain>`.
+- `web` and `admin`: Firebase Web app values `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and `VITE_FIREBASE_APP_ID`; set `VITE_API_BASE_URL` to `https://waymate-backend-g17d.onrender.com/api`.
+- `admin`: set `VITE_SOCKET_URL` to `https://waymate-backend-g17d.onrender.com`.
 - `waymate-backend`: set `DATABASE_URL` (including `schema=waymate_v2`), `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_STORAGE_BUCKET`, `DOCUMENT_STORAGE=firebase`, and `ADMIN_UIDS`. Configure other backend integrations only if enabled.
 
 Use the same Firebase project as the Android app. After deployment, add the Vercel domain to Firebase Authentication's authorized domains. Keep Firebase Admin private keys and database credentials only in Vercel's encrypted server-side environment settings; do not set them on `web` or `admin`.

@@ -50,7 +50,7 @@ module.exports = ({ config }) => {
       ...(hasGoogleServices ? ['@react-native-firebase/app'] : [])
     ],
     extra: {
-      apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'http://10.0.2.2:3001/api',
+      apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://waymate-backend-g17d.onrender.com/api',
       eas: {
         projectId: '530d5b68-c6ba-4321-a0b7-5786f79dcef4'
       }

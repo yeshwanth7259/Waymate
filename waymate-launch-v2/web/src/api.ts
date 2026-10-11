@@ -1,6 +1,6 @@
 import type { User } from '@firebase/auth';
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api').replace(/\/+$/, '');
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://waymate-backend-g17d.onrender.com/api').replace(/\/+$/, '');
 
 export type Ride = {
   id: string;
