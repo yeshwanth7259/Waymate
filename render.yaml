@@ -21,7 +21,7 @@ services:
       - key: FIREBASE_PRIVATE_KEY
         sync: false
       - key: FIREBASE_STORAGE_BUCKET
-        sync: false
+        value: waymate-f9de0.firebasestorage.app
       - key: DOCUMENT_STORAGE
         value: firebase
       - key: ADMIN_UIDS

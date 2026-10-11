@@ -78,7 +78,7 @@ The repository-root `render.yaml` deploys the shared API from `waymate-launch-v2
 - `DATABASE_URL`: the verified Supabase PostgreSQL connection string, with `schema=waymate_v2` added to its query parameters. Confirm it targets the intended project before deploying.
 - `FIREBASE_PROJECT_ID`: `waymate-f9de0`.
 - `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY`: the Firebase Admin service-account credentials. Enter them only in Render's environment settings; never commit or send them in chat.
-- `FIREBASE_STORAGE_BUCKET`: the exact bucket name shown in Firebase Storage. Enable Storage and grant the service account the permissions needed to store KYC documents.
+- `FIREBASE_STORAGE_BUCKET`: configured by the Render Blueprint as `waymate-f9de0.firebasestorage.app`. Enable Storage and grant the service account the permissions needed to store KYC documents.
 - `ADMIN_UIDS`: optional comma-separated Firebase UIDs for admin access.
 - `NODE_ENV=production` and `DOCUMENT_STORAGE=firebase`.
 
