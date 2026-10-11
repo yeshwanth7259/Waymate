@@ -1,7 +1,9 @@
-import fs from 'node:fs';
-import path from 'node:path';
+'use strict';
 
-export default ({ config }) => {
+const fs = require('node:fs');
+const path = require('node:path');
+
+module.exports = ({ config }) => {
   const googleServicesFile = process.env.GOOGLE_SERVICES_FILE || './google-services.json';
   const hasGoogleServices = fs.existsSync(path.resolve(__dirname, googleServicesFile));
   if (!hasGoogleServices && process.env.APP_ENV === 'production') {
@@ -10,7 +12,7 @@ export default ({ config }) => {
 
   return {
     ...config,
-    owner: 'wowinteriorss-team',
+    owner: 'yeshwanthkumar',
     name: 'WayMate',
     slug: 'waymate',
     version: '1.0.0',
@@ -47,10 +49,10 @@ export default ({ config }) => {
       }],
       ...(hasGoogleServices ? ['@react-native-firebase/app'] : [])
     ],
-    extra: { 
+    extra: {
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'http://10.0.2.2:3001/api',
       eas: {
-        projectId: "9815568c-034b-40b4-9bbf-a06caa391143"
+        projectId: '530d5b68-c6ba-4321-a0b7-5786f79dcef4'
       }
     }
   };
