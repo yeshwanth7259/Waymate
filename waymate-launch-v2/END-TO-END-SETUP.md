@@ -98,23 +98,19 @@ npm run dev
 
 The website uses the shared API for ride search, booking requests, ride offers, driver document uploads, wallet/commission history, and AI support. Its landing page only shows aggregated open-route summaries; the API does not expose user profile or booking data publicly. Admin review and KYC approval remain in the admin console.
 
-### Deploy the website and admin console from GitHub to Vercel
+### Deploy the services from GitHub to Vercel
 
-Create two Vercel projects from `yeshwanth7259/Waymate`, connected to the `master` production branch. Vercel will build and deploy each project after GitHub pushes.
+The repository-root `vercel.json` defines the seven Vercel Services from the deployment configuration. Import `yeshwanth7259/Waymate` as one project with repository root `.` and the `master` production branch. The route table sends `/` to the current `waymate-launch-v2/web` app, `/admin` to its admin app, `/api/*` and `/socket.io/*` to `waymate-launch-v2/backend`. Other listed services are built but are not public routes.
 
-| Vercel project | Root Directory | Framework | Build Command | Output Directory |
-|---|---|---|---|---|
-| `waymate-web` | `waymate-launch-v2/web` | Vite | `npm run build` | `dist` |
-| `waymate-admin` | `waymate-launch-v2/admin` | Vite | `npm run build` | `dist` |
+Configure environment variables for the services in the Vercel project:
 
-Leave the Install Command at Vercel's default lockfile detection. Configure these environment variables for the environments you will deploy:
+- `web` and `admin`: Firebase Web app values `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and `VITE_FIREBASE_APP_ID`; set `VITE_API_BASE_URL` to `https://<vercel-domain>/api`.
+- `admin`: set `VITE_SOCKET_URL` to `https://<vercel-domain>`.
+- `waymate-backend`: set `DATABASE_URL` (including `schema=waymate_v2`), `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_STORAGE_BUCKET`, `DOCUMENT_STORAGE=firebase`, and `ADMIN_UIDS`. Configure other backend integrations only if enabled.
 
-- Both projects: `VITE_API_BASE_URL=https://<healthy-backend-host>/api` and the Firebase Web app's `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and `VITE_FIREBASE_APP_ID`.
-- Admin only: `VITE_SOCKET_URL=https://<healthy-backend-host>` (the API's Socket.IO host, without `/api`).
+Use the same Firebase project as the Android app. After deployment, add the Vercel domain to Firebase Authentication's authorized domains. Keep Firebase Admin private keys and database credentials only in Vercel's encrypted server-side environment settings; do not set them on `web` or `admin`.
 
-Use the same Firebase project as the Android app and backend. After first deployment, add each Vercel domain to Firebase Authentication's authorized domains. Never place backend service-account keys or database credentials in frontend variables. The checked-in `vercel.json` files provide SPA route fallback for the separate projects.
-
-Do not deploy until `/api/health` on the selected backend returns HTTP 200. A successful Vercel build only serves the frontend; authentication and ride functionality still require a deployed, healthy API and correctly configured Firebase.
+Before launch, verify `https://<vercel-domain>/api/health` returns HTTP 200, test sign-in and ride flows, and confirm the Socket.IO live trip connection works. A successful frontend build alone does not mean the backend environment or database is configured correctly.
 
 Firebase Hosting is configured to serve `web/dist` as a single-page app. After creating `web/.env.local` and building the website:
 
