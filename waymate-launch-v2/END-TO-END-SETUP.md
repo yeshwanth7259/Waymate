@@ -51,6 +51,8 @@ Install the generated APK on a real Android phone.
 
 Do not test a new Firebase configuration by only refreshing JavaScript. Firebase native configuration changes require a new native build.
 
+This app uses React Native Firebase and native Android Maps, which are not included in Expo Go. Use an EAS development build while developing or a preview APK to install on an Android phone. A build also needs the correct Expo project access and an API URL reachable from the device.
+
 ## Physical Android device and local API
 
 Find the computer's LAN IPv4 address, then:
@@ -95,6 +97,24 @@ npm run dev
 ```
 
 The website uses the shared API for ride search, booking requests, ride offers, driver document uploads, wallet/commission history, and AI support. Its landing page only shows aggregated open-route summaries; the API does not expose user profile or booking data publicly. Admin review and KYC approval remain in the admin console.
+
+### Deploy the website and admin console from GitHub to Vercel
+
+Create two Vercel projects from `yeshwanth7259/Waymate`, connected to the `master` production branch. Vercel will build and deploy each project after GitHub pushes.
+
+| Vercel project | Root Directory | Framework | Build Command | Output Directory |
+|---|---|---|---|---|
+| `waymate-web` | `waymate-launch-v2/web` | Vite | `npm run build` | `dist` |
+| `waymate-admin` | `waymate-launch-v2/admin` | Vite | `npm run build` | `dist` |
+
+Leave the Install Command at Vercel's default lockfile detection. Configure these environment variables for the environments you will deploy:
+
+- Both projects: `VITE_API_BASE_URL=https://<healthy-backend-host>/api` and the Firebase Web app's `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and `VITE_FIREBASE_APP_ID`.
+- Admin only: `VITE_SOCKET_URL=https://<healthy-backend-host>` (the API's Socket.IO host, without `/api`).
+
+Use the same Firebase project as the Android app and backend. After first deployment, add each Vercel domain to Firebase Authentication's authorized domains. Never place backend service-account keys or database credentials in frontend variables. The checked-in `vercel.json` files provide SPA route fallback for the separate projects.
+
+Do not deploy until `/api/health` on the selected backend returns HTTP 200. A successful Vercel build only serves the frontend; authentication and ride functionality still require a deployed, healthy API and correctly configured Firebase.
 
 Firebase Hosting is configured to serve `web/dist` as a single-page app. After creating `web/.env.local` and building the website:
 
