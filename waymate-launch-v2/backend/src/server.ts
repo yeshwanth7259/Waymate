@@ -14,7 +14,13 @@ import { z } from 'zod';
 import { calculateCommission, estimateSeatFare, PLATFORM_COMMISSION_RATE } from './pricing.js';
 import { OmniRouteError, requestOmniRoute } from './omniroute.js';
 
-const prisma = new PrismaClient();
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is required to connect to the WayMate database.');
+}
+const databaseUrlWithSchema = new URL(databaseUrl);
+databaseUrlWithSchema.searchParams.set('schema', 'waymate_v2');
+const prisma = new PrismaClient({ datasources: { db: { url: databaseUrlWithSchema.toString() } } });
 const app = express();
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: process.env.CORS_ORIGIN?.split(',') ?? '*', methods: ['GET', 'POST', 'PATCH'] } });

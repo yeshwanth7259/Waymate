@@ -19,7 +19,7 @@ The website uses Firebase Phone Auth with reCAPTCHA. Register a Firebase Web app
 
 ## Database
 
-**Current source status:** the API still uses Prisma and `DATABASE_URL`. The requested Firebase SQL Connect migration has not been applied or cut over. Do not remove the current database or run a production schema change until the complete SQL Connect schema, operations, data migration, and API cutover have been validated.
+**Production database status:** the shared API uses Prisma and the `waymate_v2` PostgreSQL schema. Its baseline migration has been applied to the configured Supabase project. The existing `public` schema is preserved; the migration copied Firebase-linked user identities and basic profiles into `waymate_v2` without deleting or altering legacy rows. New rides and bookings are created in the shared API schema.
 
 ```bash
 cd backend
@@ -28,7 +28,7 @@ npx prisma generate
 npm run dev
 ```
 
-For a new development database, apply the Prisma schema only after reviewing it and confirming the target database. For production, use a reviewed migration and backup/rollback plan.
+Keep `schema=waymate_v2` in the PostgreSQL connection URL when running Prisma CLI commands so migrations and Prisma tooling cannot target the legacy `public` schema. The API also forces its runtime Prisma client to use `waymate_v2`. Use `npm run prisma:migrate` to apply checked-in migrations; do not use `prisma db push` against production.
 
 ## Backend environment
 
@@ -75,14 +75,14 @@ The V4 app enables Android cleartext HTTP only for development.
 
 The repository-root `render.yaml` deploys the shared API from `waymate-launch-v2/backend`. After the change is pushed to the branch connected to the Render Blueprint, sync the Blueprint. Because this is an existing Render service, add or verify the following values directly in the service's Environment settings; Render does not sync `sync: false` values from a Blueprint:
 
-- `DATABASE_URL`: the verified Supabase PostgreSQL connection string. Confirm it targets the intended project before deploying.
+- `DATABASE_URL`: the verified Supabase PostgreSQL connection string, with `schema=waymate_v2` added to its query parameters. Confirm it targets the intended project before deploying.
 - `FIREBASE_PROJECT_ID`: `waymate-f9de0`.
 - `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY`: the Firebase Admin service-account credentials. Enter them only in Render's environment settings; never commit or send them in chat.
 - `FIREBASE_STORAGE_BUCKET`: the exact bucket name shown in Firebase Storage. Enable Storage and grant the service account the permissions needed to store KYC documents.
 - `ADMIN_UIDS`: optional comma-separated Firebase UIDs for admin access.
 - `NODE_ENV=production` and `DOCUMENT_STORAGE=firebase`.
 
-Render builds with `npm install && npx prisma generate && npm run build`, starts with `npm start`, and checks `/api/health`. After deployment, verify `https://waymate-backend-g7d.onrender.com/api/health` before pointing the website and Android app at the API. Do not run `prisma db push` against production until the schema has been compared with the live database and a backup/rollback plan is approved.
+Render builds with `npm install && npx prisma generate && npm run build`, starts with `npm start`, and checks `/api/health`. After deployment, verify the configured Render API's `/api/health` endpoint before pointing the website and Android app at it. The production runtime targets `waymate_v2`; keep the Render `DATABASE_URL` pointed at the approved Supabase project. Do not use `prisma db push` against production.
 
 ## Public website
 

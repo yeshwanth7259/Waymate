@@ -9,7 +9,7 @@
     "test": "tsx --test src/pricing.test.ts src/omniroute.test.ts",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push",
+    "prisma:migrate": "prisma migrate deploy",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
