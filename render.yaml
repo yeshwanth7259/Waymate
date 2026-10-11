@@ -2,7 +2,6 @@ services:
   - type: web
     name: waymate-backend
     env: node
-    nodeVersion: 20.11.0
     plan: free
     rootDir: waymate-launch-v2/backend
     buildCommand: npm install && npx prisma generate && npm run build
@@ -11,6 +10,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 20.11.0
       - key: DATABASE_URL
         sync: false
       - key: FIREBASE_PROJECT_ID
