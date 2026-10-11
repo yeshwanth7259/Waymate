@@ -1,16 +1,87 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+generator client {
+  provider = "prisma-client-js"
+}
 
-enum Gender { MALE FEMALE OTHER }
-enum KycStatus { UNVERIFIED PENDING VERIFIED REJECTED }
-enum DocumentType { IDENTITY SELFIE DRIVING_LICENSE RC INSURANCE }
-enum DocumentStatus { PENDING VERIFIED REJECTED }
-enum VehicleType { CAR BIKE }
-enum RideStatus { OPEN FULL CANCELLED COMPLETED }
-enum RequestStatus { PENDING ACCEPTED REJECTED CANCELLED }
-enum BookingStatus { PENDING CONFIRMED CANCELLED COMPLETED }
-enum TripStatus { SCHEDULED IN_PROGRESS COMPLETED CANCELLED }
-enum LocationRole { HOST RIDER }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum KycStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum DocumentType {
+  IDENTITY
+  SELFIE
+  DRIVING_LICENSE
+  RC
+  INSURANCE
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum VehicleType {
+  CAR
+  BIKE
+}
+
+enum RideStatus {
+  OPEN
+  FULL
+  CANCELLED
+  COMPLETED
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum CashPaymentStatus {
+  DUE
+  CONFIRMED
+}
+
+enum CommissionRemittanceStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum TripStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum LocationRole {
+  HOST
+  RIDER
+}
 
 model User {
   id String @id @default(cuid())
@@ -40,6 +111,47 @@ model User {
   safetyReports SafetyReport[] @relation("ReporterReports")
   assignedReports SafetyReport[] @relation("AssignedReports")
   sosEvents SosEvent[]
+  commissionEntries CommissionEntry[] @relation("DriverCommissions")
+  commissionRemittances CommissionRemittance[]
+  tripMessages TripMessage[]
+}
+
+model TripMessage {
+  id String @id @default(cuid())
+  tripId String
+  senderId String
+  body String @db.VarChar(1000)
+  createdAt DateTime @default(now())
+  trip Trip @relation(fields:[tripId], references:[id], onDelete:Cascade)
+  sender User @relation(fields:[senderId], references:[id], onDelete:Cascade)
+  @@index([tripId, createdAt])
+}
+
+model CommissionEntry {
+  id String @id @default(cuid())
+  bookingId String @unique
+  driverId String
+  grossAmount Float
+  commissionRate Float @default(0.12)
+  commissionAmount Float
+  createdAt DateTime @default(now())
+  booking Booking @relation(fields:[bookingId], references:[id], onDelete:Cascade)
+  driver User @relation("DriverCommissions", fields:[driverId], references:[id], onDelete:Cascade)
+  @@index([driverId, createdAt])
+}
+
+model CommissionRemittance {
+  id String @id @default(cuid())
+  driverId String
+  amount Float
+  externalReference String
+  status CommissionRemittanceStatus @default(PENDING)
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  driver User @relation(fields:[driverId], references:[id], onDelete:Cascade)
+  @@index([driverId, status, createdAt])
+  @@index([status, createdAt])
 }
 
 model KycDocument {
@@ -111,6 +223,8 @@ model Ride {
   departureTime DateTime
   availableSeats Int
   price Float @default(0)
+  distanceKm Float?
+  estimatedDurationMinutes Int?
   womenOnly Boolean @default(false)
   status RideStatus @default(OPEN)
   createdAt DateTime @default(now())
@@ -149,11 +263,15 @@ model Booking {
   seats Int @default(1)
   status BookingStatus @default(PENDING)
   amount Float @default(0)
+  paymentMethod String @default("CASH_DIRECT")
+  cashPaymentStatus CashPaymentStatus @default(DUE)
+  cashCollectedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ride Ride @relation(fields:[rideId], references:[id], onDelete:Cascade)
   rider User @relation(fields:[riderId], references:[id], onDelete:Cascade)
   request RideRequest? @relation(fields:[requestId], references:[id])
+  commission CommissionEntry?
   @@index([riderId, status])
 }
 
@@ -166,6 +284,7 @@ model Trip {
   createdAt DateTime @default(now())
   ride Ride @relation(fields:[rideId], references:[id], onDelete:Cascade)
   locations TripLocation[]
+  messages TripMessage[]
   @@index([status])
 }
 

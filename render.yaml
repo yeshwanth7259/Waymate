@@ -4,8 +4,24 @@ services:
     env: node
     nodeVersion: 20.11.0
     plan: free
-    buildCommand: cd backend && npm install && npm run build
-    startCommand: cd backend && NODE_ENV=production npm run start:prod
+    rootDir: waymate-launch-v2/backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: DATABASE_URL
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        value: waymate-f9de0
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: DOCUMENT_STORAGE
+        value: firebase
+      - key: ADMIN_UIDS
         sync: false
