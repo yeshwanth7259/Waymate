@@ -1,39 +1,39 @@
 export const colors = {
-  // Primary brand (Vibrant Blue)
-  primary: '#0F62FE',
-  primaryDark: '#0043CE',
-  primarySoft: '#EDF5FF',
-  primaryPale: '#F4F8FF',
+  // Primary brand (Vibrant Green based on reference image)
+  primary: '#10A356', // A vibrant, trusted green
+  primaryDark: '#0B8243',
+  primarySoft: '#E6F8EF',
+  primaryPale: '#F2FCF7',
   
-  // Secondary (Dark Navy for headings)
-  navy: '#001D6C',
-  navy2: '#001141',
+  // Secondary (Dark Navy/Slate for headings)
+  navy: '#1A2B3C',
+  navy2: '#0F1A24',
   
   // Backgrounds & Surfaces
-  bg: '#F8F9FB', // very light cool gray
+  bg: '#F8F9FA', // Very light gray background
   white: '#FFFFFF',
   
   // Text
-  text: '#161616',
-  muted: '#525252',
-  mutedLight: '#8D8D8D',
+  text: '#1C1C1C',
+  muted: '#6C757D',
+  mutedLight: '#A0AAB2',
   
   // States & Borders
-  border: '#E0E0E0',
-  success: '#198038',
-  successSoft: '#DEFBE6',
-  red: '#DA1E28',
-  redSoft: '#FFF1F1',
-  amber: '#F1C21B',
-  amberSoft: '#FCF4D6',
+  border: '#E8EAED',
+  success: '#10A356',
+  successSoft: '#E6F8EF',
+  red: '#E12D39',
+  redSoft: '#FCEAEA',
+  amber: '#F5A623',
+  amberSoft: '#FEF6E9',
   
-  // Old legacy names kept for compatibility but mapped to blue
-  green: '#0F62FE',
-  greenDark: '#0043CE',
-  greenSoft: '#EDF5FF',
-  greenPale: '#F4F8FF',
-  blue: '#0F62FE',
-  blueSoft: '#EDF5FF',
+  // Keep legacy names mapped to new green so we don't break existing components
+  green: '#10A356',
+  greenDark: '#0B8243',
+  greenSoft: '#E6F8EF',
+  greenPale: '#F2FCF7',
+  blue: '#10A356',
+  blueSoft: '#E6F8EF',
 };
 
 export const spacing = { xs: 6, sm: 10, md: 14, lg: 18, xl: 24, xxl: 32 };

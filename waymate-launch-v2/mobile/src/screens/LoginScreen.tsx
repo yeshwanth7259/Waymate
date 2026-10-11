@@ -1,29 +1,37 @@
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
 import {Alert,Image,KeyboardAvoidingView,Platform,SafeAreaView,ScrollView,StyleSheet,Text,View,Dimensions,StatusBar} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
+import type {FirebaseAuthTypes} from '@react-native-firebase/auth';
 import {useAuth} from '../auth/AuthContext';
+import {normalizePhoneNumber,phoneAuthErrorMessage} from '../auth/phoneAuth';
 import {Button,Card,Input} from '../components/ui';
 import {colors, radius, spacing, shadows} from '../theme/theme';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-export default function LoginScreen(){const {sendOtp}=useAuth();const [phone,setPhone]=useState('+91 ');const [confirm,setConfirm]=useState<any>(null);const [code,setCode]=useState('');const [loading,setLoading]=useState(false);const doOtp=async()=>{if(phone.replace(/\D/g,'').length<10)return Alert.alert('Enter your mobile number','Use a valid Indian mobile number.');setLoading(true);try{setConfirm(await sendOtp(phone.replace(/\s/g,'')))}catch(e:any){Alert.alert('Could not send OTP',e.message)}finally{setLoading(false)}};const verify=async()=>{setLoading(true);try{await confirm.confirm(code)}catch(e:any){Alert.alert('Invalid OTP','Check the code and try again.')}finally{setLoading(false)}};return (
+export default function LoginScreen(){const {sendOtp,authError}=useAuth();const [slide,setSlide]=useState(0);const [phone,setPhone]=useState('+91 ');const [confirm,setConfirm]=useState<FirebaseAuthTypes.ConfirmationResult|null>(null);const [sentPhone,setSentPhone]=useState('');const [code,setCode]=useState('');const [loading,setLoading]=useState(false);const [resendAt,setResendAt]=useState(0);const [resendSeconds,setResendSeconds]=useState(0);
+useEffect(()=>{if(!confirm)return;const update=()=>setResendSeconds(Math.max(0,Math.ceil((resendAt-Date.now())/1000)));update();const timer=setInterval(update,1000);return()=>clearInterval(timer)},[confirm,resendAt]);
+const doOtp=async()=>{const normalized=normalizePhoneNumber(phone);if(!normalized)return Alert.alert('Enter a valid mobile number','Use + followed by the country calling code and number, for example +919876543210.');setLoading(true);try{setConfirm(await sendOtp(normalized));setSentPhone(normalized);setCode('');setResendAt(Date.now()+30000)}catch(e:any){Alert.alert('Could not send OTP',phoneAuthErrorMessage(e))}finally{setLoading(false)}};
+const verify=async()=>{const trimmed=code.trim();if(!confirm||!/^\d{6}$/.test(trimmed))return Alert.alert('Enter your OTP','Enter the six-digit code from the latest Firebase SMS.');setLoading(true);try{await confirm.confirm(trimmed)}catch(e:any){Alert.alert('Could not verify code',phoneAuthErrorMessage(e))}finally{setLoading(false)}};
+const changeNumber=()=>{setConfirm(null);setCode('');setSentPhone('');setResendSeconds(0)};
+return (
   <View style={s.root}>
-    <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+    <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
     
-    {/* Beautiful Top Hero Section */}
-    <View style={s.hero}>
-      <View style={s.heroContent}>
-        <View style={s.brandBadge}>
-          <Ionicons name="car-sport" size={24} color={colors.primary} />
-          <Text style={s.brandName}>WAYMATE</Text>
-        </View>
-        <Text style={s.heroTitle}>Carpooling has never been more exciting & simple</Text>
-        <Text style={s.heroSubtitle}>Safe carpool rides with verified professionals only</Text>
-      </View>
-      <View style={s.heroCurve} />
-    </View>
+    <Image
+      source={require('../../assets/custom_splash.jpg')}
+      style={s.bgImage}
+      resizeMode="cover"
+    />
 
+    {/* Transparent Hero Spacer to push card down */}
+    <View style={s.heroSpacer} />
+
+    {slide === 0 ? (
+      <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 40, paddingHorizontal: 20 }}>
+        <Button title="Get Started" onPress={() => setSlide(1)} />
+      </View>
+    ) : (
     <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <View style={s.cardWrapper}>
@@ -32,11 +40,12 @@ export default function LoginScreen(){const {sendOtp}=useAuth();const [phone,set
               <Text style={s.title}>Welcome back</Text>
               <Text style={s.copy}>Enter your mobile number to get started.</Text>
               
-              <Input label="MOBILE NUMBER" icon="phone-portrait-outline" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
+              <Input label="MOBILE NUMBER (INCLUDE COUNTRY CODE)" icon="phone-portrait-outline" keyboardType="phone-pad" autoComplete="tel" autoCapitalize="none" value={phone} onChangeText={setPhone} />
+              {authError&&<Text style={{color:colors.red,fontSize:12,marginBottom:12}}>{authError}</Text>}
               
               <Button title={loading?'Sending OTP…':'Continue'} icon="arrow-forward" disabled={loading} onPress={doOtp}/>
               
-              <Text style={s.terms}>By continuing, you agree to WayMate's Terms, Privacy Policy and safety guidelines.</Text>
+              <Text style={s.terms}>Firebase will send an SMS verification code. Standard SMS rates may apply. By continuing, you agree to WayMate's Terms, Privacy Policy and safety guidelines.</Text>
               
               <View style={s.bullets}>
                 {[['shield-checkmark','Verified identity'],['people','Trusted community'],['navigate','Live trip tracking']].map(([i,t])=><View key={t} style={s.bullet}><Ionicons name={i as any} size={20} color={colors.primary}/><Text style={s.bulletText}>{t}</Text></View>)}
@@ -45,33 +54,30 @@ export default function LoginScreen(){const {sendOtp}=useAuth();const [phone,set
           ) : (
             <View style={s.onboardCard}>
               <View style={s.backBtnWrap}>
-                <Ionicons name="arrow-back" size={24} color={colors.navy} onPress={()=>setConfirm(null)} />
+                <Ionicons name="arrow-back" size={24} color={colors.navy} onPress={changeNumber} />
               </View>
               <Text style={s.title}>Verify your number</Text>
-              <Text style={s.copy}>Enter the 6-digit OTP sent to {phone}.</Text>
+              <Text style={s.copy}>Enter the 6-digit OTP sent by Firebase to {sentPhone}.</Text>
               
-              <Input label="OTP" icon="keypad-outline" keyboardType="number-pad" maxLength={6} value={code} onChangeText={setCode}/>
+              <Input label="OTP" icon="keypad-outline" keyboardType="number-pad" autoComplete="sms-otp" textContentType="oneTimeCode" maxLength={6} value={code} onChangeText={setCode}/>
               
               <Button title={loading?'Verifying…':'Verify & continue'} icon="checkmark" disabled={loading||code.length<6} onPress={verify}/>
-              <Button secondary title="Resend OTP" onPress={()=>setConfirm(null)}/>
+              <Button secondary title={resendSeconds>0?`Resend code in ${resendSeconds}s`:'Resend OTP'} disabled={loading||resendSeconds>0} onPress={doOtp}/>
+              {authError&&<Text style={{color:colors.red,fontSize:12,marginTop:8}}>{authError}</Text>}
             </View>
           )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    )}
   </View>
 )}
 const s=StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  hero: { backgroundColor: colors.primary, paddingTop: 60, paddingBottom: 60, alignItems: 'center' },
-  heroContent: { paddingHorizontal: 30, alignItems: 'center', zIndex: 2 },
-  brandBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 30, marginBottom: 24, ...shadows.sm },
-  brandName: { color: colors.primary, fontSize: 16, fontWeight: '900', letterSpacing: 1.5, marginLeft: 8 },
-  heroTitle: { color: colors.white, fontSize: 32, fontWeight: '900', textAlign: 'center', lineHeight: 38, marginBottom: 12 },
-  heroSubtitle: { color: colors.primarySoft, fontSize: 15, fontWeight: '500', textAlign: 'center', paddingHorizontal: 20 },
-  heroCurve: { position: 'absolute', bottom: -30, width: width * 1.5, height: 100, backgroundColor: colors.primary, borderRadius: width * 0.75, zIndex: 1 },
-  content: { flexGrow: 1 },
-  cardWrapper: { paddingHorizontal: 20, marginTop: -40, zIndex: 10, paddingBottom: 40 },
+  bgImage: { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
+  heroSpacer: { height: height * 0.45, alignItems: 'center' },
+  content: { flexGrow: 1, justifyContent: 'flex-end' },
+  cardWrapper: { paddingHorizontal: 20, zIndex: 10, paddingBottom: 40 },
   onboardCard: { backgroundColor: colors.white, borderRadius: 24, padding: 24, ...shadows.md },
   title: { fontSize: 26, fontWeight: '900', color: colors.navy2, letterSpacing: -0.5, marginBottom: 8 },
   copy: { fontSize: 15, color: colors.muted, marginBottom: 24 },

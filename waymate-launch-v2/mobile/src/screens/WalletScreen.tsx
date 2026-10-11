@@ -1,153 +1,152 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Alert, SafeAreaView, ScrollView } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Card, Input, Badge } from '../components/ui';
-import { colors, shadows, radius } from '../theme/theme';
-import { api } from '../api/client';
+import AppHeader from '../components/AppHeader';
+import { Badge, Button, Card, Input, Loading } from '../components/ui';
+import { walletApi } from '../api/services';
+import { colors } from '../theme/theme';
 
-export default function WalletScreen() {
-  const [data, setData] = useState<any>(null);
-  const [bankInfo, setBankInfo] = useState('');
-  const [loading, setLoading] = useState(false);
+const money = (value: number) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 
-  useEffect(() => {
-    fetchEarnings();
+export default function WalletScreen({ navigation }: any) {
+  const [earnings, setEarnings] = useState<any>(null);
+  const [wallet, setWallet] = useState<any>(null);
+  const [reference, setReference] = useState('');
+  const [amount, setAmount] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const [summary, ledger] = await Promise.all([walletApi.earnings(), walletApi.wallet()]);
+      setEarnings(summary);
+      setWallet(ledger);
+    } catch (error: any) {
+      Alert.alert('Wallet unavailable', error.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  const fetchEarnings = async () => {
-    try {
-      const res = await api<any>('/wallet/earnings');
-      setData(res);
-      
-      // Fetch actual wallet details to get bank info
-      const walletRes = await api<any>('/wallet');
-      setBankInfo(walletRes.bankInfo || '');
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const saveBankInfo = async () => {
-    setLoading(true);
+  const submitRemittance = async () => {
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value <= 0) return Alert.alert('Enter an amount', 'Enter a positive amount you have already paid to WayMate outside this app.');
+    if (!reference.trim()) return Alert.alert('Add payment reference', 'Enter the external UPI or bank transfer reference for admin verification.');
+    setBusy(true);
     try {
-      await api('/wallet/bank', { method: 'PUT', body: JSON.stringify({ bankInfo }) });
-      Alert.alert('Success', 'Bank account details updated successfully.');
-    } catch (e: any) {
-      Alert.alert('Error', e.message);
+      await walletApi.submitRemittance(value, reference.trim());
+      setAmount('');
+      setReference('');
+      Alert.alert('Submitted for review', 'WayMate operations will verify your external payment reference.');
+      await load();
+    } catch (error: any) {
+      Alert.alert('Could not submit payment', error.message);
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   };
 
-  const processPayout = async () => {
-    if (!data || data.available <= 0) return Alert.alert('Error', 'Insufficient balance for payout.');
-    setLoading(true);
-    try {
-      await api('/wallet/payout', { method: 'POST', body: JSON.stringify({ amount: data.available }) });
-      Alert.alert('Payout Initiated', 'The amount will be credited to your linked bank account shortly.');
-      fetchEarnings();
-    } catch (e: any) {
-      Alert.alert('Error', e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (loading) return <Loading label="Loading your driver wallet…" />;
 
-  if (!data) return <SafeAreaView style={s.root}></SafeAreaView>;
+  const due = Number(earnings?.pending || 0);
+  const weeks = earnings?.weeks || [];
 
   return (
-    <SafeAreaView style={s.root}>
-      <ScrollView contentContainerStyle={s.content}>
-        <View style={s.header}>
-          <Text style={s.title}>Driver Center</Text>
-          <Text style={s.subtitle}>Cash earnings & commission dues</Text>
-        </View>
-
-        <View style={s.balanceCard}>
-          <Text style={s.label}>CASH COLLECTED THIS WEEK</Text>
-          <Text style={s.balance}>₹{data.thisWeek.gross.toLocaleString()}</Text>
-          
-          <View style={s.breakdownRow}>
-            <View style={s.breakdownItem}>
-              <Text style={s.breakdownLabel}>Your Share</Text>
-              <Text style={s.breakdownValue}>₹{data.thisWeek.net}</Text>
-            </View>
-            <View style={s.breakdownItem}>
-              <Text style={s.breakdownLabel}>WayMate Comm.</Text>
-              <Text style={[s.breakdownValue, {color: colors.amberSoft}]}>-₹{data.thisWeek.commission}</Text>
-            </View>
-          </View>
-        </View>
-
-        <Card style={s.card}>
-          <Text style={s.cardTitle}>Commission Dues</Text>
-          <View style={s.walletRow}>
-            <View>
-              <Text style={s.walletLabel}>Pending Dues</Text>
-              <Text style={s.walletValue}>₹{data.pending.toLocaleString()}</Text>
-            </View>
-          </View>
-          
-          <Button 
-            title={loading ? 'Processing...' : 'Pay Commission Dues'} 
-            onPress={processPayout} 
-            disabled={loading || data.pending <= 0}
-          />
-          <Text style={s.warning}>Clear your dues to continue receiving ride requests.</Text>
-        </Card>
-
-        <Card style={s.card}>
-          <Text style={s.cardTitle}>Weekly cash collection</Text>
-          <Text style={s.desc}>Last 6 weeks</Text>
-          <View style={s.graph}>
-            {data.weeks.map((val: number, i: number) => {
-              const max = Math.max(...data.weeks);
-              const height = (val / max) * 100;
-              return (
-                <View key={i} style={s.barContainer}>
-                  <View style={[s.bar, {height: `${Math.max(10, height)}%`}]} />
-                </View>
-              );
-            })}
-          </View>
-          <View style={s.graphLabels}>
-            {['Aug','Sep','Sep','Sep','Oct','Oct'].map((lbl, i) => <Text key={i} style={s.graphLabel}>{lbl}</Text>)}
+    <View style={s.root}>
+      <AppHeader title="Driver Wallet" subtitle="Cash earnings and platform commission" navigation={navigation} showBack />
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+        contentContainerStyle={s.content}
+      >
+        <Card style={s.hero}>
+          <Text style={s.kicker}>CASH COLLECTED THIS WEEK</Text>
+          <Text style={s.gross}>{money(Number(earnings?.thisWeek?.gross || 0))}</Text>
+          <View style={s.breakdown}>
+            <View><Text style={s.breakdownLabel}>Driver keeps</Text><Text style={s.breakdownValue}>{money(Number(earnings?.thisWeek?.net || 0))}</Text></View>
+            <View><Text style={s.breakdownLabel}>Platform fee · 12%</Text><Text style={s.breakdownValue}>-{money(Number(earnings?.thisWeek?.commission || 0))}</Text></View>
           </View>
         </Card>
+
+        <Card>
+          <View style={s.walletHeader}>
+            <View style={s.walletIcon}><Ionicons name="wallet-outline" size={22} color={colors.greenDark} /></View>
+            <View style={{ flex: 1 }}><Text style={s.title}>Platform balance</Text><Text style={s.copy}>Negative amounts are commission you owe WayMate.</Text></View>
+          </View>
+          <Text style={[s.balance, due > 0 && s.negative]}>{due > 0 ? `-${money(due)}` : money(0)}</Text>
+          <Badge text={`${money(due)} commission due`} tone={due > 0 ? 'amber' : 'green'} />
+        </Card>
+
+        <Card style={s.notice}>
+          <Text style={s.noticeTitle}>No online payment or payout</Text>
+          <Text style={s.copy}>Riders pay you directly in cash or UPI after the ride. WayMate never collects the rider fare. The 12% platform commission is recorded here; settle it outside the app using payment instructions supplied by WayMate, then submit the transfer reference below for admin review.</Text>
+        </Card>
+
+        {due > 0 && <Card>
+          <Text style={s.title}>Submit an external commission payment</Text>
+          <Text style={s.copy}>This records a payment you have already made; it does not move money or initiate a payout.</Text>
+          <Input label="AMOUNT PAID (₹)" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} placeholder={`Up to ${Math.round(due)}`} />
+          <Input label="UPI / BANK TRANSFER REFERENCE" value={reference} onChangeText={setReference} placeholder="Transaction reference" autoCapitalize="characters" />
+          <Button title={busy ? 'Submitting…' : 'Submit for admin verification'} disabled={busy} onPress={submitRemittance} />
+        </Card>}
+
+        <Text style={s.sectionTitle}>Six-week earnings</Text>
+        <Card>
+          {weeks.length ? weeks.map((week: any, index: number) => (
+            <View key={`${week.label}-${index}`} style={s.weekRow}>
+              <Text style={s.weekLabel}>{week.label}</Text>
+              <Text style={s.weekSub}>Gross {money(Number(week.gross || 0))} · fee {money(Number(week.commission || 0))}</Text>
+              <Text style={s.weekNet}>{money(Number(week.net || 0))}</Text>
+            </View>
+          )) : <Text style={s.copy}>Completed cash collections will appear here.</Text>}
+        </Card>
+
+        <Text style={s.sectionTitle}>Wallet ledger</Text>
+        {wallet?.transactions?.length ? wallet.transactions.map((item: any) => (
+          <Card key={item.id} style={s.transaction}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.transactionTitle}>{item.type === 'PLATFORM_COMMISSION' ? '12% platform commission' : 'External commission payment'}</Text>
+              <Text style={s.copy}>{item.reference} · {new Date(item.createdAt).toLocaleDateString('en-IN')}</Text>
+            </View>
+            <View style={s.transactionRight}>
+              <Text style={[s.transactionAmount, item.amount < 0 && s.negative]}>{item.amount < 0 ? '-' : '+'}{money(Math.abs(Number(item.amount || 0)))}</Text>
+              <Badge text={item.status} tone={item.status === 'VERIFIED' ? 'green' : item.status === 'REJECTED' ? 'red' : 'amber'} />
+            </View>
+          </Card>
+        )) : <Card><Text style={s.copy}>No cash collection or commission entries yet.</Text></Card>}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 20, gap: 16 },
-  header: { marginBottom: 10, marginTop: 10 },
-  title: { fontSize: 32, fontWeight: '900', color: colors.navy2, letterSpacing: -0.5 },
-  subtitle: { fontSize: 16, color: colors.muted, marginTop: 4, fontWeight: '600' },
-  balanceCard: { backgroundColor: colors.primary, borderRadius: 24, padding: 24, gap: 8, ...shadows.md },
-  label: { fontSize: 13, color: colors.primarySoft, fontWeight: '800', letterSpacing: 1 },
-  balance: { fontSize: 44, fontWeight: '900', color: colors.white, letterSpacing: -1 },
-  payoutText: { color: colors.primarySoft, fontSize: 13, fontWeight: '500', marginBottom: 16 },
-  breakdownRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)', paddingTop: 16 },
-  breakdownItem: { alignItems: 'flex-start' },
-  breakdownLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', marginBottom: 4 },
-  breakdownValue: { color: colors.white, fontSize: 16, fontWeight: '800' },
-  card: { padding: 20, gap: 16 },
-  cardTitle: { fontSize: 20, fontWeight: '800', color: colors.navy2, marginBottom: 4 },
-  payoutRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primarySoft, padding: 16, borderRadius: 16, marginTop: 8 },
-  payoutLabel: { color: colors.navy, fontSize: 12, fontWeight: '600', marginBottom: 2 },
-  payoutDate: { color: colors.primary, fontSize: 16, fontWeight: '800' },
-  graph: { flexDirection: 'row', height: 120, alignItems: 'flex-end', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 10, marginTop: 10 },
-  barContainer: { width: '12%', height: '100%', justifyContent: 'flex-end', alignItems: 'center' },
-  bar: { width: 14, backgroundColor: colors.primary, borderRadius: 4 },
-  graphLabels: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 },
-  graphLabel: { fontSize: 11, color: colors.muted, fontWeight: '600' },
-  walletRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: colors.bg, padding: 16, borderRadius: 16, marginBottom: 8 },
-  walletLabel: { fontSize: 12, color: colors.muted, fontWeight: '700', textTransform: 'uppercase', marginBottom: 4 },
-  walletValue: { fontSize: 22, fontWeight: '900', color: colors.navy2 },
-  bankHeader: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 8 },
-  iconWrap: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  desc: { fontSize: 14, color: colors.muted, lineHeight: 20 },
-  warning: { color: colors.amberSoft, fontSize: 13, marginTop: 4, textAlign: 'center', fontWeight: '600' }
+  content: { padding: 16, paddingBottom: 32 },
+  hero: { backgroundColor: colors.navy, padding: 20 },
+  kicker: { color: '#CFE2DB', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  gross: { color: '#fff', fontSize: 36, fontWeight: '900', marginTop: 5 },
+  breakdown: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,.18)', marginTop: 15, paddingTop: 13, flexDirection: 'row', justifyContent: 'space-between' },
+  breakdownLabel: { color: '#CFE2DB', fontSize: 10 },
+  breakdownValue: { color: '#fff', fontWeight: '900', fontSize: 15, marginTop: 4 },
+  walletHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  walletIcon: { width: 42, height: 42, borderRadius: 13, backgroundColor: colors.greenSoft, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 15, fontWeight: '900', color: colors.navy },
+  copy: { fontSize: 11, lineHeight: 17, color: colors.muted, marginTop: 4 },
+  balance: { fontSize: 30, fontWeight: '900', color: colors.navy, marginVertical: 10 },
+  negative: { color: colors.red },
+  notice: { backgroundColor: '#F2F8FF' },
+  noticeTitle: { fontSize: 14, fontWeight: '900', color: colors.navy },
+  sectionTitle: { fontSize: 18, fontWeight: '900', color: colors.navy, marginTop: 12, marginBottom: 8 },
+  weekRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
+  weekLabel: { width: 54, fontWeight: '800', color: colors.navy, fontSize: 11 },
+  weekSub: { flex: 1, color: colors.muted, fontSize: 9 },
+  weekNet: { fontWeight: '900', color: colors.greenDark, fontSize: 12 },
+  transaction: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  transactionTitle: { color: colors.navy, fontWeight: '900', fontSize: 12 },
+  transactionRight: { alignItems: 'flex-end', gap: 4 },
+  transactionAmount: { color: colors.greenDark, fontWeight: '900', fontSize: 13 },
 });

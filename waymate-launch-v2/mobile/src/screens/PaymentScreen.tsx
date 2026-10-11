@@ -2,22 +2,22 @@ import React,{useEffect,useState} from 'react';
 import {Alert,ScrollView,StyleSheet,Text,View} from 'react-native';
 import AppHeader from '../components/AppHeader';
 import {Badge,Button,Card,Loading} from '../components/ui';
-import {paymentApi} from '../api/services';
-import {useAuth} from '../auth/AuthContext';
+import {bookingApi,paymentApi} from '../api/services';
 import {colors} from '../theme/theme';
 
 const money=(v:any)=>`₹${Math.round(Number(v||0)).toLocaleString('en-IN')}`;
 export default function PaymentScreen({route,navigation}:any){
- const {user}=useAuth(); const [payment,setPayment]=useState<any>(); const [loading,setLoading]=useState(true); const [busy,setBusy]=useState(false);
- const load=()=>paymentApi.booking(route.params.bookingId).then(setPayment).catch(e=>Alert.alert('Payment unavailable',e.message)).finally(()=>setLoading(false));
+ const [payment,setPayment]=useState<any>(); const [loading,setLoading]=useState(true); const [busy,setBusy]=useState(false);
+ const load=()=>paymentApi.booking(route.params.bookingId).then(setPayment).catch((e:any)=>Alert.alert('Payment unavailable',e.message)).finally(()=>setLoading(false));
  useEffect(()=>{load()},[]);
+ const confirmCash=()=>Alert.alert('Confirm cash received','Confirm only after the rider has paid you directly.',[{text:'Not yet',style:'cancel'},{text:'Confirm received',onPress:async()=>{setBusy(true);try{await bookingApi.confirmCashCollected(route.params.bookingId);await load()}catch(e:any){Alert.alert('Could not confirm cash',e.message)}finally{setBusy(false)}}}]);
  
  if(loading)return <Loading/>;
- const gross=Number(payment?.amount||0); const commission=Number(payment?.payout?.platformFee||0); const driverShare=Number(payment?.payout?.payoutAmount||Math.max(0,gross-commission));
+ const gross=Number(payment?.amount||0); const commission=Number(payment?.commission?.amount||0); const driverShare=Number(payment?.commission?.driverNet??gross-commission);
  return <View style={s.root}><AppHeader title="Trip Payment" subtitle="Pay directly to driver" navigation={navigation} showBack/><ScrollView contentContainerStyle={s.content}>
-  <Card style={s.hero}><Badge text="Zero processing fees" icon="cash-outline"/><Text style={s.title}>Pay your driver directly at the end of the trip</Text><Text style={s.copy}>You do not need to pay WayMate. At the end of your trip, pay the driver directly via Cash or their personal UPI QR code.</Text><View style={s.amount}><Text style={s.amountLabel}>RIDE FARE</Text><Text style={s.amountValue}>{money(gross)}</Text></View></Card>
-  <Card><Text style={s.section}>How it works</Text><Row label="You pay directly to the driver" value={money(gross)} strong/><Row label="WayMate commission" value={`-${money(commission)}`}/><View style={s.divider}/><Row label="Driver net earnings" value={money(driverShare)} green strong/><View style={s.driverNote}><Text style={s.driverNoteTitle}>Driver pays commission</Text><Text style={s.driverNoteSub}>The WayMate commission is automatically deducted from the driver's wallet. You only need to pay the total fare directly to the driver.</Text></View></Card>
-  <Card><Text style={s.section}>Payment method</Text><Badge text="DIRECT TO DRIVER" tone="green"/><Text style={s.success}>Your seat is confirmed! Please pay the driver directly during the trip.</Text><Button title="View My Rides" icon="car" onPress={()=>navigation.navigate('Tabs',{screen:'MyRides'})}/></Card>
+  <Card style={s.hero}><Badge text="NO ONLINE CHECKOUT" icon="cash-outline"/><Text style={s.title}>Pay your driver directly</Text><Text style={s.copy}>Pay the driver in cash or directly by UPI at the end of the ride. WayMate does not collect rider payments.</Text><View style={s.amount}><Text style={s.amountLabel}>FARE PER YOUR BOOKING</Text><Text style={s.amountValue}>{money(gross)}</Text></View></Card>
+  <Card><Text style={s.section}>Fare and platform fee</Text><Row label="You pay directly to driver" value={money(gross)} strong/><Row label="WayMate platform commission (12%)" value={`-${money(commission)}`}/><View style={s.divider}/><Row label="Driver keeps after commission" value={money(driverShare)} green strong/><View style={s.driverNote}><Text style={s.driverNoteTitle}>Driver records cash received</Text><Text style={s.driverNoteSub}>Once the ride is complete and cash is received, the driver confirms collection. WayMate records the 12% commission as an amount due from the driver; no rider payment or driver payout is processed online.</Text></View></Card>
+  <Card><Text style={s.section}>Direct payment status</Text><Badge text={payment?.cashPaymentStatus==='CONFIRMED'?'CASH CONFIRMED':'PAY DRIVER DIRECTLY'} tone={payment?.cashPaymentStatus==='CONFIRMED'?'green':'amber'}/><Text style={s.success}>{payment?.cashPaymentStatus==='CONFIRMED'?'The driver confirmed receiving your direct payment.':'Your seat is confirmed. Pay the driver directly at the end of the completed trip.'}</Text>{payment?.canConfirmCash&&<Button title={busy?'Saving…':'Confirm cash received'} disabled={busy} icon="checkmark" onPress={confirmCash}/>}<Button secondary title="View My Rides" icon="car" onPress={()=>navigation.navigate('Tabs',{screen:'MyRides'})}/></Card>
  </ScrollView></View>
 }
 function Row({label,value,strong,green}:{label:string,value:string,strong?:boolean,green?:boolean}){return <View style={s.row}><Text style={[s.rowLabel,strong&&s.strong]}>{label}</Text><Text style={[s.rowValue,strong&&s.strong,green&&s.green]}>{value}</Text></View>}

@@ -12,14 +12,22 @@ const AuthContext=createContext<C>({user:null,profile:null,loading:true,authErro
  useEffect(()=>{
    let unsub:undefined|(()=>void);
    try {
-     unsub=auth().onAuthStateChanged(async u=>{setUser(u); if(u){try{await refresh();}catch(e:any){setProfile(null);}} else setProfile(null); setLoading(false);});
+     unsub=auth().onAuthStateChanged(async u=>{
+       setUser(u);
+       setAuthError(null);
+       if(u){
+         try { await refresh(); }
+         catch(e:any) { setProfile(null); setAuthError(e?.message || 'Could not load your WayMate profile.'); }
+       } else setProfile(null);
+       setLoading(false);
+     });
    } catch(e:any) {
      setAuthError(e?.message || 'Firebase Authentication is not configured in this Android build.');
      setLoading(false);
    }
    return ()=>{ if(unsub) unsub(); };
  },[]);
- const sendOtp=async(phone:string)=>{try{return await auth().signInWithPhoneNumber(phone);}catch(e:any){throw e;}};
+ const sendOtp=async(phone:string)=>{setAuthError(null);return auth().signInWithPhoneNumber(phone);};
  return <AuthContext.Provider value={{user,profile,loading,authError,refresh,sendOtp,logout:()=>auth().signOut(),appMode,setAppMode}}>{children}</AuthContext.Provider>;
 }
 export const useAuth=()=>useContext(AuthContext);

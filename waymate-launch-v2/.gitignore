@@ -9,5 +9,7 @@ android/app/build
 android/local.properties
 ios/Pods
 *.keystore
+credentials.json
+keystore_info.txt
 google-services.json
 GoogleService-Info.plist

@@ -3,7 +3,10 @@ import path from 'node:path';
 
 export default ({ config }) => {
   const googleServicesFile = process.env.GOOGLE_SERVICES_FILE || './google-services.json';
-  const hasGoogleServices = true;
+  const hasGoogleServices = fs.existsSync(path.resolve(__dirname, googleServicesFile));
+  if (!hasGoogleServices && process.env.APP_ENV === 'production') {
+    throw new Error('Set GOOGLE_SERVICES_FILE to the matching Firebase Android app configuration before building a production app.');
+  }
 
   return {
     ...config,
@@ -15,8 +18,8 @@ export default ({ config }) => {
     scheme: 'waymate',
     userInterfaceStyle: 'light',
     splash: {
-      image: './assets/custom_splash.jpg',
-      resizeMode: 'cover',
+      image: './assets/splash-icon.png',
+      resizeMode: 'contain',
       backgroundColor: '#F8F9FB'
     },
     android: {

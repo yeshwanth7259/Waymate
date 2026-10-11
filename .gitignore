@@ -3,3 +3,8 @@ dist/
 .env
 .env.*
 !.env.example
+mobile/credentials.json
+mobile/google-services.json
+mobile/GoogleService-Info.plist
+mobile/keystore_info.txt
+mobile/*.keystore

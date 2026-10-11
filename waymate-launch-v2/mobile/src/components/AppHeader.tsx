@@ -4,9 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/theme';
 import { IconButton } from './ui';
 import { useAuth } from '../auth/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AppHeader({ title, subtitle, navigation, showBack = false, showToggle = false }: any) {
   const { appMode, setAppMode, profile } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const handleToggle = (mode: 'RIDER' | 'DRIVER') => {
     if (mode === 'DRIVER' && profile?.kycStatus !== 'VERIFIED') {
@@ -17,7 +19,7 @@ export default function AppHeader({ title, subtitle, navigation, showBack = fals
     setAppMode(mode);
   };
 
-  return <View style={styles.header}>
+  return <View style={[styles.header, { paddingTop: insets.top, height: 64 + insets.top }]}>
     {showBack ? <IconButton icon="arrow-back" onPress={() => navigation.goBack()} label="Back" /> : <Image source={require('../../waymate-horizontal.png')} style={styles.logo} />}
     
     {!showToggle && title && <View style={{ flex: 1, marginHorizontal: 10 }}><Text style={styles.title}>{title}</Text>{subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}</View>}

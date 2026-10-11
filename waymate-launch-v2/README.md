@@ -26,7 +26,14 @@ WayMate is a mobile-first carpool + bikepool platform for Bengaluru and later ot
 - Safety reports / SOS
 - Safety policy configuration
 
-There is intentionally **no user-facing web dashboard** in this build.
+**Responsive user-facing website**
+- Public WayMate landing page and live, aggregated popular-route summaries
+- Firebase phone OTP sign-in
+- Ride search and seat requests
+- Driver onboarding, KYC and vehicle document uploads
+- Ride publishing, booking management and driver earnings/commission history
+
+The website and native Android app use the same Firebase identity, API and Prisma-backed PostgreSQL records. The admin console remains a separate web application and is the review surface for KYC and vehicle documents.
 
 ## Why the phone screenshots looked wrong
 
@@ -68,11 +75,12 @@ The policy is server-enforced and configurable from the admin console. It should
 cd backend
 npm install
 npm run prisma:generate
-npm run prisma:push
+npm run prisma:migrate
 npm run dev
 ```
 
 Create `backend/.env` from `.env.example`.
+Keep `schema=waymate_v2` in `DATABASE_URL` when running Prisma CLI commands; the API applies this schema automatically at runtime.
 
 ## Mobile
 
@@ -98,6 +106,18 @@ npx eas build --platform android --profile production
 
 Production API must be HTTPS.
 
+## User website
+
+```bash
+cd web
+Copy-Item .env.example .env.local
+# Fill in the Firebase Web app config and the shared backend URL.
+npm install
+npm run dev
+```
+
+Use the same Firebase project configured by `backend/FIREBASE_PROJECT_ID` and the Android `google-services.json`. Point `VITE_API_BASE_URL` and `EXPO_PUBLIC_API_BASE_URL` at the same backend. The API's `DATABASE_URL` is the one shared PostgreSQL database; it can be a Supabase PostgreSQL connection string when that is the project's chosen database. This repository does not provision or verify a Supabase project by itself.
+
 ## Admin
 
 ```bash
@@ -106,7 +126,7 @@ npm install
 npm run dev
 ```
 
-The admin application is the only web application.
+The admin application is separate from the public rider/driver website.
 
 ## Secrets
 

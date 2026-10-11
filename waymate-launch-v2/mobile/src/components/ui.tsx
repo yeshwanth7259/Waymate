@@ -3,9 +3,9 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, ViewSt
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, shadows } from '../theme/theme';
 
-export function Button({ title, onPress, secondary = false, danger = false, disabled = false, icon }: { title: string; onPress: () => void; secondary?: boolean; danger?: boolean; disabled?: boolean; icon?: keyof typeof Ionicons.glyphMap }) {
+export function Button({ title, onPress, secondary = false, danger = false, disabled = false, small = false, icon }: { title: string; onPress: () => void; secondary?: boolean; danger?: boolean; disabled?: boolean; small?: boolean; icon?: keyof typeof Ionicons.glyphMap }) {
   return (
-    <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.btn, secondary && styles.secondary, danger && styles.danger, disabled && styles.disabled, pressed && !disabled && { opacity: 0.88 }]}>
+    <Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.btn, small && styles.smallButton, secondary && styles.secondary, danger && styles.danger, disabled && styles.disabled, pressed && !disabled && { opacity: 0.88 }]}>
       {icon && <Ionicons name={icon} size={18} color={secondary ? colors.greenDark : colors.white} style={{ marginRight: 8 }} />}
       <Text style={[styles.btnText, secondary && { color: colors.greenDark }, danger && { color: colors.white }]}>{title}</Text>
     </Pressable>
@@ -47,8 +47,18 @@ export function RouteRow({ from, to, time }: { from: string; to: string; time?: 
 
 export function Loading({ label = 'Loading WayMate…' }: { label?: string }) { return <View style={styles.loading}><ActivityIndicator size="large" color={colors.green} /><Text style={styles.loadingText}>{label}</Text></View>; }
 
+export function EmptyState({ icon, title, copy, action, onPress }: { icon: keyof typeof Ionicons.glyphMap; title: string; copy: string; action?: string; onPress?: () => void }) {
+  return <View style={styles.emptyState}>
+    <Ionicons name={icon} size={36} color={colors.green} />
+    <Text style={styles.emptyTitle}>{title}</Text>
+    <Text style={styles.emptyCopy}>{copy}</Text>
+    {action && onPress && <Button title={action} onPress={onPress} />}
+  </View>;
+}
+
 export const styles = StyleSheet.create({
   btn: { minHeight: 56, backgroundColor: colors.primary, borderRadius: radius.xxl, paddingHorizontal: 24, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', marginVertical: 8, ...shadows.glow },
+  smallButton: { minHeight: 40, paddingHorizontal: 16, paddingVertical: 10 },
   secondary: { backgroundColor: colors.primarySoft, borderWidth: 0, ...shadows.sm },
   danger: { backgroundColor: colors.red, ...shadows.sm },
   disabled: { opacity: 0.5, ...shadows.sm },
@@ -71,4 +81,7 @@ export const styles = StyleSheet.create({
   routeTime: { color: colors.muted, fontSize: 13, fontWeight: '700' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   loadingText: { marginTop: 14, color: colors.muted, fontWeight: '600', fontSize: 15 },
+  emptyState: { alignItems: 'center', paddingHorizontal: 22, paddingVertical: 30 },
+  emptyTitle: { color: colors.navy, fontWeight: '900', fontSize: 16, marginTop: 10 },
+  emptyCopy: { color: colors.muted, fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 5 },
 });
