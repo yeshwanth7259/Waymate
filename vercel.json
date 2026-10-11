@@ -34,21 +34,15 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": {
-        "service": "waymate-backend"
-      }
+      "destination": "https://waymate-backend-g17d.onrender.com/api/$1"
     },
     {
       "source": "/socket.io/(.*)",
-      "destination": {
-        "service": "waymate-backend"
-      }
+      "destination": "https://waymate-backend-g17d.onrender.com/socket.io/$1"
     },
     {
       "source": "/socket.io",
-      "destination": {
-        "service": "waymate-backend"
-      }
+      "destination": "https://waymate-backend-g17d.onrender.com/socket.io"
     },
     {
       "source": "/admin/(.*)",

@@ -100,15 +100,14 @@ The website uses the shared API for ride search, booking requests, ride offers, 
 
 ### Deploy the services from GitHub to Vercel
 
-The repository-root `vercel.json` defines the seven Vercel Services from the deployment configuration. Import `yeshwanth7259/Waymate` as one project with repository root `.` and the `master` production branch. The route table sends `/` to the current `waymate-launch-v2/web` app, `/admin` to its admin app, `/api/*` and `/socket.io/*` to `waymate-launch-v2/backend`. Other listed services are built but are not public routes.
+The repository-root `vercel.json` defines the seven Vercel Services from the deployment configuration. Import `yeshwanth7259/Waymate` as one project with repository root `.` and the `master` production branch. The route table sends `/` to the current `waymate-launch-v2/web` app and `/admin` to its admin app. API and Socket.IO requests are forwarded to the existing Render backend so mobile, web, and admin use the same production database and Firebase configuration.
 
 Configure environment variables for the services in the Vercel project:
 
 - `web` and `admin`: Firebase Web app values `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and `VITE_FIREBASE_APP_ID`; set `VITE_API_BASE_URL` to `https://waymate-backend-g17d.onrender.com/api`.
 - `admin`: set `VITE_SOCKET_URL` to `https://waymate-backend-g17d.onrender.com`.
-- `waymate-backend`: set `DATABASE_URL` (including `schema=waymate_v2`), `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_STORAGE_BUCKET`, `DOCUMENT_STORAGE=firebase`, and `ADMIN_UIDS`. Configure other backend integrations only if enabled.
 
-Use the same Firebase project as the Android app. After deployment, add the Vercel domain to Firebase Authentication's authorized domains. Keep Firebase Admin private keys and database credentials only in Vercel's encrypted server-side environment settings; do not set them on `web` or `admin`.
+Use the same Firebase project as the Android app. After deployment, add the Vercel domain to Firebase Authentication's authorized domains. Keep Firebase Admin private keys and database credentials only in Render's encrypted environment settings; do not set them on Vercel's `web` or `admin` services.
 
 Before launch, verify `https://<vercel-domain>/api/health` returns HTTP 200, test sign-in and ride flows, and confirm the Socket.IO live trip connection works. A successful frontend build alone does not mean the backend environment or database is configured correctly.
 
