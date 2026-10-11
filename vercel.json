@@ -22,11 +22,11 @@
       "root": "waymate-launch-v2/web",
       "framework": "vite"
     },
-    "admin-2": {
+    "admin-platform": {
       "root": "waymate-platform/admin",
       "framework": "vite"
     },
-    "backend-2": {
+    "backend-platform": {
       "root": "waymate-platform/backend",
       "framework": "express"
     }
