@@ -1,5 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "web": {
+      "root": ".",
+      "framework": "vite"
+    },
+    "admin": {
+      "root": "waymate-launch-v2/admin",
+      "framework": "vite"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -14,8 +24,22 @@
       "destination": "https://waymate-backend-g17d.onrender.com/socket.io"
     },
     {
+      "source": "/admin/(.*)",
+      "destination": {
+        "service": "admin"
+      }
+    },
+    {
+      "source": "/admin",
+      "destination": {
+        "service": "admin"
+      }
+    },
+    {
       "source": "/(.*)",
-      "destination": "/"
+      "destination": {
+        "service": "web"
+      }
     }
   ]
 }
