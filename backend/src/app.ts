@@ -8,6 +8,7 @@ import requestRoutes from './modules/bookings/request.routes';
 import bookingRoutes from './modules/bookings/booking.routes';
 import tripRoutes from './modules/trips/trip.routes';
 import walletRoutes from './modules/wallet/wallet.routes';
+import safetyRoutes from './modules/safety/safety.routes';
 
 const app = express();
 
@@ -31,5 +32,6 @@ app.use('/api/requests', requestRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/safety', safetyRoutes);
 
 export default app;

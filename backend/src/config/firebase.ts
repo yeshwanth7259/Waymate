@@ -6,7 +6,7 @@ import fs from 'fs';
 
 dotenv.config();
 
-const serviceAccountPath = path.resolve(__dirname, '../../../firebase-service-account.json');
+const serviceAccountPath = path.resolve(__dirname, 'serviceAccountKey.json');
 
 try {
   if (fs.existsSync(serviceAccountPath)) {

@@ -3,41 +3,86 @@ import type { User } from '@firebase/auth';
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') ? '/api' : 'https://waymate-backend-g17d.onrender.com/api')).replace(/\/+$/, '');
 
 export type Ride = {
-  id: string;
-  origin: string;
-  destination: string;
+  id: string | number;
+  from?: string;
+  to?: string;
+  origin?: string;
+  destination?: string;
   departureTime: string;
   availableSeats: number;
-  price: number;
+  price?: number;
+  purpose?: string;
   distanceKm?: number | null;
   estimatedDurationMinutes?: number | null;
   womenOnly?: boolean;
   status: string;
-  host?: { firstName?: string | null; lastName?: string | null; rating?: number; ratingCount?: number; verified?: boolean };
-  vehicle?: { type: 'CAR' | 'BIKE'; make?: string | null; model?: string | null; color?: string | null; seats: number; verified?: boolean };
+  host?: {
+    id?: number;
+    firstName?: string | null;
+    lastName?: string | null;
+    phone?: string | null;
+    rating?: number;
+    ratingCount?: number;
+    verified?: boolean;
+    profile?: { fullName?: string | null; gender?: string | null };
+  };
+  vehicle?: {
+    id?: number;
+    type: 'CAR' | 'BIKE';
+    brand?: string | null;
+    make?: string | null;
+    model?: string | null;
+    registrationNumber?: string | null;
+    color?: string | null;
+    seatCapacity?: number;
+    seats?: number;
+    verified?: boolean;
+  };
   trip?: { id: string; status: string } | null;
-  requests?: { id: string; status: string; seats: number; rider?: { firstName?: string | null; phone?: string | null } }[];
-  bookings?: { id: string; status: string; amount: number; cashPaymentStatus: string; rider?: { firstName?: string | null } }[];
+  requests?: {
+    id: number | string;
+    status: string;
+    seats: number;
+    riderId?: number;
+    rider?: { firstName?: string | null; phone?: string | null; profile?: { fullName?: string | null; gender?: string | null } };
+  }[];
+  bookings?: {
+    id: number | string;
+    status: string;
+    seats?: number;
+    amount?: number;
+    cashPaymentStatus?: string;
+    rider?: { firstName?: string | null; phone?: string | null; profile?: { fullName?: string | null } };
+    ride?: Ride;
+  }[];
 };
 
 export type Vehicle = {
-  id: string;
+  id: string | number;
   type: 'CAR' | 'BIKE';
-  make: string;
+  brand?: string;
+  make?: string;
   model: string;
   registrationNumber: string;
-  seats: number;
-  verified: boolean;
+  color?: string | null;
+  seatCapacity?: number;
+  seats?: number;
+  verified?: boolean;
+  verificationStatus?: string;
   documents?: { type: string; status: string; rejectionReason?: string | null }[];
 };
 
 export type Profile = {
-  id: string;
+  id?: string | number;
+  fullName?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
   phone?: string | null;
+  email?: string | null;
+  city?: string | null;
   kycStatus?: string;
+  role?: 'RIDER' | 'DRIVER' | null;
 };
 
 export type FareEstimate = { minimum: number; maximum: number; suggested: number };

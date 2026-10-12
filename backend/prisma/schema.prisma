@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -40,6 +41,7 @@ model Profile {
   emergencyContact   String?
   rating             Float   @default(0.0)
   totalRides         Int     @default(0)
+  safetyMode         String  @default("STANDARD")
   verificationStatus String  @default("PENDING")
 }
 

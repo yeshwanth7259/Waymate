@@ -39,6 +39,10 @@ export const offerRide = async (req: AuthenticatedRequest, res: Response): Promi
 
 export const searchRides = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    const firebaseUid = req.user?.uid;
+    const user = await prisma.user.findUnique({ where: { firebaseUid: firebaseUid! }, include: { profile: true } });
+    if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+
     const { from, to, date, seats, vehicleType } = req.query;
     
     // Find active rides with available seats
@@ -49,7 +53,11 @@ export const searchRides = async (req: AuthenticatedRequest, res: Response): Pro
       },
       include: {
         host: { include: { profile: true } },
-        vehicle: true
+        vehicle: true,
+        bookings: {
+          where: { status: 'CONFIRMED' },
+          include: { rider: { include: { profile: true } } }
+        }
       }
     });
 
@@ -57,6 +65,28 @@ export const searchRides = async (req: AuthenticatedRequest, res: Response): Pro
     if (vehicleType) {
       rides = rides.filter(r => r.vehicle.type === vehicleType);
     }
+
+    // Safety Policy Enforcement
+    rides = rides.filter(ride => {
+      // Composition of this ride
+      const hostGender = ride.host.profile?.gender;
+      const passengerGenders = ride.bookings.map(b => b.rider.profile?.gender);
+      
+      const isRiderFemale = user.profile?.gender === 'FEMALE';
+      const riderSafetyMode = user.profile?.safetyMode || 'STANDARD';
+
+      if (isRiderFemale && riderSafetyMode === 'WOMEN_ONLY') {
+        if (hostGender !== 'FEMALE') return false;
+        if (passengerGenders.includes('MALE')) return false;
+      }
+
+      if (isRiderFemale && ride.vehicle.type === 'BIKE') {
+        // Optional strict bike rule for women
+        if (riderSafetyMode === 'WOMEN_ONLY' && hostGender !== 'FEMALE') return false;
+      }
+
+      return true;
+    });
 
     // Advanced filtering & scoring using Matching Engine
     const matchedRides = rides.map(ride => {
@@ -74,7 +104,14 @@ export const getRide = async (req: AuthenticatedRequest, res: Response): Promise
   try {
     const ride = await prisma.ride.findUnique({
       where: { id: Number(req.params.id) },
-      include: { host: { include: { profile: true }}, vehicle: true }
+      include: { 
+        host: { include: { profile: true }}, 
+        vehicle: true,
+        bookings: {
+          where: { status: 'CONFIRMED' },
+          include: { rider: { include: { profile: true } } }
+        }
+      }
     });
     if (!ride) { res.status(404).json({ error: 'Ride not found' }); return; }
     res.json(ride);

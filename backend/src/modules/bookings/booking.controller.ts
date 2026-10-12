@@ -11,8 +11,14 @@ export const requestSeat = async (req: AuthenticatedRequest, res: Response): Pro
     const rideId = Number(req.params.id);
     const { seats } = req.body;
 
-    // Check ride exists and has seats
-    const ride = await prisma.ride.findUnique({ where: { id: rideId } });
+    const ride = await prisma.ride.findUnique({ 
+      where: { id: rideId },
+      include: { 
+        host: { include: { profile: true } },
+        bookings: { include: { rider: { include: { profile: true } } } }
+      }
+    });
+    
     if (!ride || ride.availableSeats < seats) {
       res.status(400).json({ error: 'Ride not available or not enough seats' });
       return;
@@ -21,6 +27,20 @@ export const requestSeat = async (req: AuthenticatedRequest, res: Response): Pro
     if (ride.hostId === user.id) {
         res.status(400).json({ error: 'Cannot request a seat on your own ride' });
         return;
+    }
+
+    const riderProfile = await prisma.profile.findUnique({ where: { userId: user.id } });
+    const isRiderFemale = riderProfile?.gender === 'FEMALE';
+    const safetyMode = riderProfile?.safetyMode || 'STANDARD';
+
+    if (isRiderFemale && safetyMode === 'WOMEN_ONLY') {
+      const hostGender = ride.host.profile?.gender;
+      const passengerGenders = ride.bookings.map(b => b.rider.profile?.gender);
+      
+      if (hostGender !== 'FEMALE' || passengerGenders.includes('MALE')) {
+        res.status(403).json({ code: 'WOMEN_ONLY_VIOLATION', error: 'This ride does not meet your Women Only safety preference.' });
+        return;
+      }
     }
 
     const request = await prisma.rideRequest.create({
