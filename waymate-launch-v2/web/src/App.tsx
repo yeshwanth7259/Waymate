@@ -42,6 +42,23 @@ function App() {
   const [error, setError] = useState('');
   const recaptcha = useRef<RecaptchaVerifier | null>(null);
 
+  const resetRecaptcha = () => {
+    if (recaptcha.current) {
+      try {
+        recaptcha.current.clear();
+      } catch {
+        // ignore
+      }
+      recaptcha.current = null;
+    }
+    const container = document.getElementById('recaptcha-container');
+    if (container && container.parentNode) {
+      const fresh = document.createElement('div');
+      fresh.id = 'recaptcha-container';
+      container.parentNode.replaceChild(fresh, container);
+    }
+  };
+
   useEffect(() => {
     if (!webAuth) {
       setAuthLoading(false);
@@ -49,15 +66,14 @@ function App() {
     }
     return onAuthStateChanged(webAuth, nextUser => {
       if (nextUser) {
-        recaptcha.current?.clear();
-        recaptcha.current = null;
+        resetRecaptcha();
       }
       setUser(nextUser);
       setAuthLoading(false);
     });
   }, []);
 
-  useEffect(() => () => recaptcha.current?.clear(), []);
+  useEffect(() => () => resetRecaptcha(), []);
 
   useEffect(() => {
     if (!confirmation) return;
@@ -83,6 +99,7 @@ function App() {
     setAuthBusy(true);
     try {
       await setPersistence(webAuth, browserLocalPersistence);
+      resetRecaptcha();
       const verifier = new RecaptchaVerifier(webAuth, 'recaptcha-container', { size: 'invisible' });
       recaptcha.current = verifier;
       const result = await signInWithPhoneNumber(webAuth, number, verifier);
@@ -90,11 +107,8 @@ function App() {
       setPhone(number);
       setCodeSent(true);
       setResendAt(Date.now() + 30_000);
-      verifier.clear();
-      recaptcha.current = null;
     } catch (reason) {
-      recaptcha.current?.clear();
-      recaptcha.current = null;
+      resetRecaptcha();
       setError(phoneAuthErrorMessage(reason));
     } finally {
       setAuthBusy(false);
@@ -120,6 +134,7 @@ function App() {
       await confirmation.confirm(otp);
       setConfirmation(null);
       setOtp('');
+      resetRecaptcha();
     } catch (reason) {
       setError(phoneAuthErrorMessage(reason));
     } finally {
@@ -136,7 +151,7 @@ function App() {
   }} />;
   if (!firebaseConfigured || !webAuth) return <main className="center"><section className="card config-card"><button className="text-button" onClick={() => setShowLanding(true)}>← Back to WayMate</button><span className="eyebrow">WAYMATE WEB</span><h1>Firebase setup is required</h1><p>Copy <code>web/.env.example</code> to <code>web/.env.local</code> and fill in the Web app configuration from the same Firebase project as the Android app. Do not put service-account or OmniRoute secrets in this file.</p></section></main>;
   if (!user) return <main className="auth-layout"><section className="auth-card"><button className="text-button auth-back" onClick={() => { setError(''); setShowLanding(true); }}>← Back to WayMate</button><img className="auth-logo" src={waymateLogo} alt="WayMate" /><span className="eyebrow">SHARE THE JOURNEY</span><h1>Travel together with WayMate</h1><p className="muted">Sign in with your phone to find rides, share seats, and manage your trip. Your account is shared with the WayMate Android app.</p><div id="recaptcha-container" />
-    {!codeSent ? <form onSubmit={sendCode}><label>Phone number<input autoComplete="tel" inputMode="tel" value={phone} onChange={event => setPhone(event.target.value)} placeholder="+919876543210" /></label><button disabled={authBusy}>{authBusy ? 'Sending…' : 'Send verification code'}</button></form> : <form onSubmit={verifyCode}><p className="muted">Enter the code sent by Firebase to {phone}.</p><label>6-digit code<input autoComplete="one-time-code" inputMode="numeric" maxLength={6} value={otp} onChange={event => setOtp(event.target.value.replace(/\D/g, ''))} /></label><button disabled={authBusy}>{authBusy ? 'Verifying…' : 'Verify and continue'}</button><button className="button-secondary" type="button" disabled={authBusy || resendSeconds > 0} onClick={() => void resendCode()}>{resendSeconds > 0 ? `Resend code in ${resendSeconds}s` : 'Resend code'}</button><button className="button-secondary" type="button" onClick={() => { recaptcha.current?.clear(); recaptcha.current = null; setCodeSent(false); setConfirmation(null); setOtp(''); setResendSeconds(0); }}>Change number</button></form>}
+    {!codeSent ? <form onSubmit={sendCode}><label>Phone number<input autoComplete="tel" inputMode="tel" value={phone} onChange={event => setPhone(event.target.value)} placeholder="+919876543210" /></label><button disabled={authBusy}>{authBusy ? 'Sending…' : 'Send verification code'}</button></form> : <form onSubmit={verifyCode}><p className="muted">Enter the code sent by Firebase to {phone}.</p><label>6-digit code<input autoComplete="one-time-code" inputMode="numeric" maxLength={6} value={otp} onChange={event => setOtp(event.target.value.replace(/\D/g, ''))} /></label><button disabled={authBusy}>{authBusy ? 'Verifying…' : 'Verify and continue'}</button><button className="button-secondary" type="button" disabled={authBusy || resendSeconds > 0} onClick={() => void resendCode()}>{resendSeconds > 0 ? `Resend code in ${resendSeconds}s` : 'Resend code'}</button><button className="button-secondary" type="button" onClick={() => { resetRecaptcha(); setCodeSent(false); setConfirmation(null); setOtp(''); setResendSeconds(0); setError(''); }}>Change number</button></form>}
     {error && <p className="alert">{error}</p>}<p className="fineprint">Firebase sends an SMS with your verification code. Standard SMS rates may apply. Never share your code. For web sign-in, Firebase verifies this site's domain with reCAPTCHA.</p>
   </section></main>;
 
