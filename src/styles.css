@@ -495,55 +495,6 @@ body{overflow-x:clip}
   border: 1px solid #f6cbf1;
 }
 
-/* Landing Popular Corridors */
-.landing-routes {
-  padding: 40px 24px;
-  max-width: 1040px;
-  margin: 0 auto;
-}
-.landing-routes-header {
-  margin-bottom: 24px;
-  text-align: center;
-}
-.landing-routes-header h2 {
-  font-size: 26px;
-  margin: 6px 0 0;
-  color: #172b22;
-}
-.routes-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 16px;
-}
-.route-card-btn {
-  background: #ffffff;
-  border: 1.5px solid #d8e5de;
-  border-radius: 14px;
-  padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
-}
-.route-card-btn:hover {
-  border-color: #0d8a50;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(13, 138, 80, 0.12);
-}
-.route-card-btn strong {
-  font-size: 16px;
-  color: #162a22;
-}
-.route-card-btn span {
-  font-size: 13px;
-  color: #0b7544;
-  font-weight: 600;
-}
-
 /* Dedicated Role Selection Modal */
 .role-modal-card {
   background: #ffffff;

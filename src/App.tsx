@@ -1359,6 +1359,7 @@ function Assistant({ user: _user, report }: { user?: User; report: (message: str
 function Landing({ onLogin }: { onLogin: (tab: Tab, route?: { origin: string; destination: string; date?: string }) => void }) {
   const [routes, setRoutes] = useState<PopularRoute[]>([]);
   const [routesLoading, setRoutesLoading] = useState(true);
+  const [routesError, setRoutesError] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [slide, setSlide] = useState(0);
   const [origin, setOrigin] = useState('');
@@ -1374,7 +1375,7 @@ function Landing({ onLogin }: { onLogin: (tab: Tab, route?: { origin: string; de
     let active = true;
     publicApi<PopularRoute[]>('/rides/popular')
       .then(items => { if (active) setRoutes(items); })
-      .catch(() => { /* ignore */ })
+      .catch(reason => { if (active) setRoutesError(friendlyError(reason)); })
       .finally(() => { if (active) setRoutesLoading(false); });
     return () => { active = false; };
   }, []);
@@ -1385,6 +1386,24 @@ function Landing({ onLogin }: { onLogin: (tab: Tab, route?: { origin: string; de
     return () => window.clearInterval(timer);
   }, [slides.length]);
 
+  useEffect(() => {
+    const items = document.querySelectorAll<HTMLElement>('[data-reveal]');
+    if (!('IntersectionObserver' in window)) {
+      items.forEach(item => item.classList.add('is-visible'));
+      return;
+    }
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    items.forEach(item => observer.observe(item));
+    return () => observer.disconnect();
+  }, [routes, routesLoading]);
+
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
     onLogin('find', { origin: origin.trim(), destination: destination.trim(), date: departureDate });
@@ -1394,14 +1413,9 @@ function Landing({ onLogin }: { onLogin: (tab: Tab, route?: { origin: string; de
     <header className="landing-nav">
       <a className="landing-brand" href="#home" aria-label="WayMate home"><img src={waymateLogo} alt="" /><span>WayMate</span></a>
       <nav className={menuOpen ? 'landing-links is-open' : 'landing-links'} aria-label="Main navigation">
-        <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How it works</a>
-        <a href="#popular-routes" onClick={() => setMenuOpen(false)}>Explore rides</a>
-        <a href="#safety" onClick={() => setMenuOpen(false)}>Safety</a>
+        <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How it works</a><a href="#popular-routes" onClick={() => setMenuOpen(false)}>Explore rides</a><a href="#safety" onClick={() => setMenuOpen(false)}>Safety</a>
       </nav>
-      <div className="landing-actions">
-        <button className="nav-login" onClick={() => onLogin('find')}>Log in</button>
-        <button className="nav-start" onClick={() => onLogin('find')}>Get started <span aria-hidden="true">↗</span></button>
-      </div>
+      <div className="landing-actions"><button className="nav-login" onClick={() => onLogin('find')}>Log in</button><button className="nav-start" onClick={() => onLogin('find')}>Get started <span aria-hidden="true">↗</span></button></div>
       <button className={menuOpen ? 'menu-toggle is-open' : 'menu-toggle'} aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><span /><span /></button>
     </header>
 
@@ -1413,69 +1427,62 @@ function Landing({ onLogin }: { onLogin: (tab: Tab, route?: { origin: string; de
           <div className="hero-kicker"><span className="hero-kicker-dot" /> THE WAY WE GO, TOGETHER</div>
           <h1>{slides[slide].lead}<br /><em>{slides[slide].highlight}</em></h1>
           <p>{slides[slide].detail}</p>
-          <div className="hero-actions">
-            <button className="hero-primary" onClick={() => onLogin('find')}>Find a ride <span aria-hidden="true">↗</span></button>
-            <button className="hero-secondary" onClick={() => onLogin('offer')}>Offer a ride</button>
-          </div>
+          <div className="hero-actions"><button className="hero-primary" onClick={() => onLogin('find')}>Find a ride <span aria-hidden="true">↗</span></button><button className="hero-secondary" onClick={() => onLogin('offer')}>Offer a ride</button></div>
         </div>
         <div className="hero-side-note"><span>01 — SHARED JOURNEYS</span><span>Made for the way you move.</span></div>
         <div className="hero-pagination" aria-label="Hero slides">{slides.map((item, index) => <button key={item.highlight} className={slide === index ? 'is-active' : ''} aria-label={`Show slide ${index + 1}`} aria-pressed={slide === index} onClick={() => setSlide(index)} />)}</div>
+        <a className="hero-scroll" href="#how-it-works"><span>SCROLL TO EXPLORE</span><b aria-hidden="true">↓</b></a>
       </section>
 
-      <section className="ride-search-dock" aria-label="Quick ride search">
-        <form className="search-dock-form" onSubmit={submitSearch}>
-          <div className="dock-field"><label htmlFor="dock-from">From</label><input id="dock-from" required maxLength={120} value={origin} onChange={event => setOrigin(event.target.value)} placeholder="City or pickup" /></div>
-          <span className="dock-divider" aria-hidden="true" />
-          <div className="dock-field"><label htmlFor="dock-to">To</label><input id="dock-to" required maxLength={120} value={destination} onChange={event => setDestination(event.target.value)} placeholder="Destination" /></div>
-          <span className="dock-divider" aria-hidden="true" />
-          <div className="dock-field"><label htmlFor="dock-date">Date</label><input id="dock-date" type="date" value={departureDate} onChange={event => setDepartureDate(event.target.value)} /></div>
-          <button className="dock-submit" type="submit">Search rides</button>
-        </form>
+      <form className="ride-search-dock" onSubmit={submitSearch} aria-label="Search for a ride">
+        <div className="search-dock-title"><span className="eyebrow">LET'S GET YOU THERE</span><strong>Where are you headed?</strong></div>
+        <label><span>FROM</span><input required maxLength={120} value={origin} onChange={event => setOrigin(event.target.value)} placeholder="Starting point" /></label>
+        <span className="search-swap" aria-hidden="true">→</span>
+        <label><span>TO</span><input required maxLength={120} value={destination} onChange={event => setDestination(event.target.value)} placeholder="Your destination" /></label>
+        <label className="dock-date"><span>WHEN</span><input type="date" value={departureDate} onChange={event => setDepartureDate(event.target.value)} /></label>
+        <button className="dock-submit" type="submit">Search rides <span aria-hidden="true">↗</span></button>
+      </form>
+
+      <section className="landing-trust" aria-label="WayMate ride-sharing principles">
+        <span><b>01</b><strong>One account</strong><small>Website + Android app</small></span>
+        <span><b>02</b><strong>Ride together</strong><small>Share the trip, split the fare</small></span>
+        <span><b>03</b><strong>Safety first</strong><small>Driver and vehicle checks</small></span>
+        <span><b>04</b><strong>Seat by seat</strong><small>Request only what you need</small></span>
       </section>
 
-      <section className="landing-routes" id="popular-routes">
-        <div className="landing-routes-header">
-          <span className="eyebrow">POPULAR CORRIDORS</span>
-          <h2>Explore frequently traveled routes</h2>
+      <section className="landing-section route-section" id="popular-routes" data-reveal>
+        <div className="section-heading"><div><span className="eyebrow">OUT THERE, RIGHT NOW</span><h2>Find your way<br />from here.</h2></div><p>Real routes shared by WayMate drivers. Pick a journey and see the open seats currently available.</p></div>
+        {routesLoading ? <div className="route-state"><span className="spinner" /> Loading live WayMate routes…</div>
+          : routesError ? <div className="route-state route-error">Live routes are unavailable right now. Sign in to search again once the service is back.</div>
+            : routes.length ? <div className="popular-grid">{routes.slice(0, 6).map((route, index) => <button className="popular-route" key={`${route.origin}-${route.destination}`} onClick={() => onLogin('find', { origin: route.origin, destination: route.destination })}><span className="route-count">{String(index + 1).padStart(2, '0')}</span><span className="route-arrow" aria-hidden="true">↗</span><strong>{route.origin}</strong><span className="route-connector"><i /></span><strong>{route.destination}</strong><small><b>{route.activeRides}</b> open {route.activeRides === 1 ? 'ride' : 'rides'}{route.avgPrice ? ` · avg. ₹${Math.round(route.avgPrice)} / seat` : ''}</small></button>)}</div>
+              : <div className="route-state">New routes will appear here as drivers publish rides. Create the first shared journey.</div>}
+        <p className="fineprint">Routes and estimated fares are shared by drivers and can change. Requests are confirmed by the driver.</p>
+        <button className="section-link" onClick={() => onLogin('find')}>Explore all rides <span aria-hidden="true">↗</span></button>
+      </section>
+
+      <section className="landing-section journey-section" id="how-it-works" data-reveal>
+        <div className="section-heading"><div><span className="eyebrow">SAME ROAD, TWO WAYS TO RIDE</span><h2>There's a seat<br />with your name on it.</h2></div><p>One WayMate account. One shared ride network. Sign in on the website or Android app and pick up right where you left off.</p></div>
+        <div className="journey-cards">
+          <article className="journey-card rider-card"><div className="journey-card-top"><span>01 / RIDE ALONG</span><span className="journey-glyph">↘</span></div><div className="journey-illustration rider-illustration"><div className="route-line"><i /><i /><i /></div><span className="journey-pin pin-one">A</span><span className="journey-pin pin-two">B</span><div className="ride-ticket"><small>YOUR NEXT RIDE</small><strong>One way, together.</strong><span>Search · Request · Go</span></div></div><div className="journey-card-bottom"><div><h3>Going somewhere?</h3><p>Find a route, request your seat, and get the driver's confirmation before you go.</p></div><button aria-label="Find a ride" onClick={() => onLogin('find')}>↗</button></div></article>
+          <article className="journey-card driver-card"><div className="journey-card-top"><span>02 / TAKE THE WHEEL</span><span className="journey-glyph">↗</span></div><div className="journey-illustration driver-illustration"><div className="driver-orbit orbit-a" /><div className="driver-orbit orbit-b" /><div className="driver-car"><span>W</span><i /><i /></div><div className="driver-verified"><b>✓</b> Ride ready</div><div className="driver-seat"><strong>+1</strong><small>seat to share</small></div></div><div className="journey-card-bottom"><div><h3>Already on the road?</h3><p>Complete identity and vehicle checks, then share a ride with people heading your way.</p></div><button aria-label="Offer a ride" onClick={() => onLogin('offer')}>↗</button></div></article>
         </div>
-        {routesLoading ? (
-          <p className="muted">Loading popular routes…</p>
-        ) : (
-          <div className="routes-cards-grid">
-            {(routes.length > 0 ? routes : [
-              { origin: 'Bengaluru', destination: 'Mysuru', route: 'Bengaluru → Mysuru', activeRides: 14, avgPrice: 350 },
-              { origin: 'Mumbai', destination: 'Pune', route: 'Mumbai → Pune', activeRides: 22, avgPrice: 420 },
-              { origin: 'Delhi', destination: 'Jaipur', route: 'Delhi → Jaipur', activeRides: 18, avgPrice: 550 },
-              { origin: 'Chennai', destination: 'Puducherry', route: 'Chennai → Puducherry', activeRides: 9, avgPrice: 280 },
-            ]).map(r => (
-              <button
-                key={r.route}
-                type="button"
-                className="route-card-btn"
-                onClick={() => {
-                  setOrigin(r.origin);
-                  setDestination(r.destination);
-                  onLogin('find', { origin: r.origin, destination: r.destination });
-                }}
-              >
-                <strong>{r.route}</strong>
-                <span>from ₹{r.avgPrice} · {r.activeRides} rides available</span>
-              </button>
-            ))}
-          </div>
-        )}
       </section>
 
-      <section className="landing-trust">
-        <span><b>Direct settlement</b> Pay your driver in cash or UPI</span>
-        <span><b>Community verified</b> Phone and identity verification</span>
-        <span><b>Women Safety</b> Dedicated female-only rides</span>
+      <section className="safety-banner" id="safety" data-reveal>
+        <div className="safety-copy"><span className="eyebrow">CHECKED BY PEOPLE. ENFORCED BY THE PLATFORM.</span><h2>A little more trust<br />goes a long way.</h2><p>Identity and vehicle documents go through admin review. Ride eligibility and safety rules are checked by the shared WayMate backend—not just by the website.</p><button className="safety-link" onClick={() => onLogin('setup')}>See driver verification <span aria-hidden="true">↗</span></button></div>
+        <div className="safety-stack"><div className="safety-card"><span className="safety-icon">✓</span><div><strong>Identity is reviewed</strong><small>Submitted documents are checked by the WayMate team.</small></div><span className="safety-index">01</span></div><div className="safety-card"><span className="safety-icon">⌑</span><div><strong>Vehicles are checked</strong><small>RC and current insurance must be approved before offering.</small></div><span className="safety-index">02</span></div><div className="safety-card"><span className="safety-icon">◎</span><div><strong>Trips stay connected</strong><small>Trip status and permitted location sharing follow the ride.</small></div><span className="safety-index">03</span></div></div>
+      </section>
+
+      <section className="landing-cta" data-reveal>
+        <div><span className="eyebrow">YOUR NEXT JOURNEY STARTS HERE</span><h2>Take the scenic route.<br /><em>Take it together.</em></h2></div><button onClick={() => onLogin('find')}>Get started with WayMate <span aria-hidden="true">↗</span></button>
       </section>
     </main>
-
     <footer className="landing-footer">
-      <div className="landing-brand"><img src={waymateLogo} alt="" /><span>WayMate</span></div>
-      <p>© {new Date().getFullYear()} WayMate. Share the journey.</p>
+      <div className="footer-top">
+        <div className="footer-brand-block"><a className="landing-brand" href="#home"><img src={waymateLogo} alt="" /><span>WayMate</span></a><p>One shared ride network, on web and Android.</p></div>
+        <button className="footer-cta" onClick={() => onLogin('offer')}>Share your ride <span aria-hidden="true">↗</span></button>
+      </div>
+      <div className="footer-bottom"><nav aria-label="Footer navigation"><a href="#how-it-works">How it works</a><a href="#popular-routes">Find a ride</a><a href="#safety">Safety</a></nav><span>© {new Date().getFullYear()} WayMate</span></div>
     </footer>
   </div>;
 }
