@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -15,16 +14,8 @@
       "destination": "https://waymate-backend-g17d.onrender.com/socket.io"
     },
     {
-      "source": "/admin/(.*)",
-      "destination": "/admin/index.html"
-    },
-    {
-      "source": "/admin",
-      "destination": "/admin/index.html"
-    },
-    {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ]
 }
