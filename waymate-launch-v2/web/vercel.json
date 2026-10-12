@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://waymate-backend-g17d.onrender.com/api/$1"
+    },
+    {
+      "source": "/socket.io/(.*)",
+      "destination": "https://waymate-backend-g17d.onrender.com/socket.io/$1"
+    },
+    {
+      "source": "/socket.io",
+      "destination": "https://waymate-backend-g17d.onrender.com/socket.io"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }
