@@ -38,6 +38,7 @@ function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState('');
   const [role, setRole] = useState<Role>(() => (localStorage.getItem('waymate_role') as Role) || 'RIDER');
+  const [roleSelected, setRoleSelected] = useState<boolean>(() => sessionStorage.getItem('waymate_role_selected') === 'true');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [bookingRide, setBookingRide] = useState<Ride | null>(null);
 
@@ -151,11 +152,23 @@ function App() {
     }
   };
 
-  const switchRole = (nextRole: Role) => {
+  const handleSelectRole = (nextRole: Role) => {
     setRole(nextRole);
     localStorage.setItem('waymate_role', nextRole);
+    sessionStorage.setItem('waymate_role_selected', 'true');
+    setRoleSelected(true);
     setTab(nextRole === 'RIDER' ? 'find' : 'offer');
     setError('');
+    if (!profile?.firstName && !localStorage.getItem('waymate_onboarded')) {
+      setShowOnboarding(true);
+    }
+  };
+
+  const handleSignOut = () => {
+    sessionStorage.removeItem('waymate_role_selected');
+    setRoleSelected(false);
+    setShowLanding(true);
+    if (webAuth) void signOut(webAuth);
   };
 
   if (authLoading) return <main className="center"><div className="spinner" /><p>Connecting securely to WayMate…</p></main>;
@@ -172,6 +185,10 @@ function App() {
   </section></main>;
 
   return <div className="app-shell">
+    {!roleSelected && (
+      <RoleSelectionModal onSelectRole={handleSelectRole} />
+    )}
+
     {showOnboarding && (
       <OnboardingModal
         user={user}
@@ -213,20 +230,14 @@ function App() {
           {role === 'RIDER' ? '🎒 Rider Mode' : '🚗 Driver Mode'}
         </span>
         <button
-          className="mode-switch-btn"
-          onClick={() => switchRole(role === 'RIDER' ? 'DRIVER' : 'RIDER')}
-        >
-          {role === 'RIDER' ? '🚗 Switch to Driver' : '🎒 Switch to Rider'}
-        </button>
-        <button
           className="text-button"
           style={{ color: '#d7e7ed', padding: '6px 10px', fontSize: 13 }}
           onClick={() => setShowOnboarding(true)}
-          title="Edit Profile & Preferences"
+          title="Account Profile & Settings"
         >
           {profile?.firstName ? `Hi, ${profile.firstName}` : user.phoneNumber} ⚙️
         </button>
-        <button className="button-secondary logout" onClick={() => { setShowLanding(true); if (webAuth) void signOut(webAuth); }}>
+        <button className="button-secondary logout" onClick={handleSignOut}>
           Sign out
         </button>
       </div>
@@ -266,6 +277,58 @@ function App() {
       {tab === 'assistant' && <Assistant user={user} report={setError} />}
     </main>
   </div>;
+}
+
+function RoleSelectionModal({
+  onSelectRole,
+}: {
+  onSelectRole: (role: Role) => void;
+}) {
+  return (
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="role-modal-title">
+      <div className="role-modal-card">
+        <span className="eyebrow" style={{ color: '#0d8a50', letterSpacing: '1px', fontWeight: 800 }}>
+          WELCOME TO WAYMATE
+        </span>
+        <h2 id="role-modal-title" style={{ fontSize: 24, margin: '8px 0 6px', color: '#162b22' }}>
+          Are you a Rider or a Driver?
+        </h2>
+        <p className="muted" style={{ margin: '0 0 24px', fontSize: 14 }}>
+          Please choose how you want to travel to see your personalized dashboard.
+        </p>
+
+        <div className="role-selection-grid">
+          <button
+            type="button"
+            className="role-selection-choice rider"
+            onClick={() => onSelectRole('RIDER')}
+          >
+            <div className="role-choice-badge">🎒 RIDER EXPERIENCE</div>
+            <div className="role-choice-icon">🧳</div>
+            <h3>I am a Rider</h3>
+            <p>
+              Search available carpools, book empty seats in seconds, travel safely, and pay your driver directly with cash or UPI.
+            </p>
+            <div className="role-choice-btn">Continue as Rider →</div>
+          </button>
+
+          <button
+            type="button"
+            className="role-selection-choice driver"
+            onClick={() => onSelectRole('DRIVER')}
+          >
+            <div className="role-choice-badge driver">🚗 DRIVER PORTAL</div>
+            <div className="role-choice-icon">🚘</div>
+            <h3>I am a Driver</h3>
+            <p>
+              Publish your commute, offer empty seats, offset fuel costs, register your vehicle, and accept passenger booking requests.
+            </p>
+            <div className="role-choice-btn driver">Continue as Driver →</div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function OnboardingModal({
@@ -638,7 +701,18 @@ function FindRides({
         </button>
       </form>
 
-      <RideCards rides={rides} action="Book a seat" onAction={onSelectRide} />
+      <RideCards
+        rides={rides}
+        action="Book a seat"
+        onAction={onSelectRide}
+        onClearSearch={origin || destination || date || womenOnly ? () => {
+          setOrigin('');
+          setDestination('');
+          setDate('');
+          setWomenOnly(false);
+          void search();
+        } : undefined}
+      />
     </section>
   );
 }
@@ -647,15 +721,31 @@ function RideCards({
   rides,
   action,
   onAction,
+  onClearSearch,
 }: {
   rides: Ride[];
   action?: string;
   onAction?: (ride: Ride) => void;
+  onClearSearch?: () => void;
 }) {
   const [expandedRide, setExpandedRide] = useState<string | number | null>(null);
 
   if (!rides.length) {
-    return <div className="empty">No rides found matching this route. Try searching another date or city!</div>;
+    return (
+      <div className="empty" style={{ padding: '36px 20px', textAlign: 'center' }}>
+        <p style={{ margin: '0 0 10px', fontSize: 16, fontWeight: 700, color: '#172b22' }}>
+          No rides found matching this route.
+        </p>
+        <p className="muted" style={{ margin: '0 0 16px', fontSize: 13 }}>
+          Try clearing your filters or searching another date or city.
+        </p>
+        {onClearSearch && (
+          <button type="button" className="button-secondary" onClick={onClearSearch}>
+            Browse All Available Rides
+          </button>
+        )}
+      </div>
+    );
   }
 
   return (

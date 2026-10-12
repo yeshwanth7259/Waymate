@@ -90,7 +90,11 @@ export const searchRides = async (req: AuthenticatedRequest, res: Response): Pro
 
     // Advanced filtering & scoring using Matching Engine
     const matchedRides = rides.map(ride => {
-      const score = calculateMatchScore(ride, { from: String(from), to: String(to), date: String(date) });
+      const score = calculateMatchScore(ride, {
+        from: from ? String(from) : undefined,
+        to: to ? String(to) : undefined,
+        date: date ? String(date) : undefined
+      });
       return { ...ride, matchScore: score };
     }).sort((a, b) => b.matchScore - a.matchScore);
 

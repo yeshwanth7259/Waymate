@@ -117,7 +117,26 @@ export const getMyBookings = async (req: AuthenticatedRequest, res: Response): P
         where: { riderId: user.id },
         include: { ride: { include: { host: { include: { profile: true } }, vehicle: true } } }
       });
-      res.json(bookings);
+
+      const pendingRequests = await prisma.rideRequest.findMany({
+        where: { riderId: user.id, status: 'PENDING' },
+        include: { ride: { include: { host: { include: { profile: true } }, vehicle: true } } }
+      });
+
+      const allItems = [
+        ...bookings.map(b => ({ ...b, status: b.status || 'CONFIRMED' })),
+        ...pendingRequests.map(r => ({
+          id: `req-${r.id}`,
+          rideId: r.rideId,
+          riderId: r.riderId,
+          seats: r.seats,
+          status: 'PENDING',
+          ride: r.ride,
+          createdAt: r.createdAt
+        }))
+      ];
+
+      res.json(allItems);
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });
     }
