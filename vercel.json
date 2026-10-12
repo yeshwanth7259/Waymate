@@ -4,10 +4,6 @@
     "web": {
       "root": ".",
       "framework": "vite"
-    },
-    "admin": {
-      "root": "waymate-launch-v2/admin",
-      "framework": "vite"
     }
   },
   "rewrites": [
@@ -25,15 +21,11 @@
     },
     {
       "source": "/admin/(.*)",
-      "destination": {
-        "service": "admin"
-      }
+      "destination": "/admin/index.html"
     },
     {
       "source": "/admin",
-      "destination": {
-        "service": "admin"
-      }
+      "destination": "/admin/index.html"
     },
     {
       "source": "/(.*)",
