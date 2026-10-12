@@ -1,36 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "app": {
-      "root": ".",
-      "framework": "vite"
-    },
-    "backend": {
-      "root": "backend",
-      "framework": "express"
-    },
-    "admin": {
-      "root": "waymate-launch-v2/admin",
-      "framework": "vite"
-    },
-    "waymate-backend": {
-      "root": "waymate-launch-v2/backend",
-      "framework": "express",
-      "buildCommand": "npm ci --include=dev && npx prisma generate && npm run build"
-    },
-    "web": {
-      "root": "waymate-launch-v2/web",
-      "framework": "vite"
-    },
-    "admin-platform": {
-      "root": "waymate-platform/admin",
-      "framework": "vite"
-    },
-    "backend-platform": {
-      "root": "waymate-platform/backend",
-      "framework": "express"
-    }
-  },
+  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -46,21 +16,15 @@
     },
     {
       "source": "/admin/(.*)",
-      "destination": {
-        "service": "admin"
-      }
+      "destination": "/admin/index.html"
     },
     {
       "source": "/admin",
-      "destination": {
-        "service": "admin"
-      }
+      "destination": "/admin/index.html"
     },
     {
       "source": "/(.*)",
-      "destination": {
-        "service": "web"
-      }
+      "destination": "/index.html"
     }
   ]
 }

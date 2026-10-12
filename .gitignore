@@ -8,3 +8,4 @@ mobile/google-services.json
 mobile/GoogleService-Info.plist
 mobile/keystore_info.txt
 mobile/*.keystore
+*.tsbuildinfo
