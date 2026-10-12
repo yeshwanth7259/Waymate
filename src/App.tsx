@@ -1434,14 +1434,48 @@ function Landing({ onLogin }: { onLogin: (tab: Tab, route?: { origin: string; de
         <a className="hero-scroll" href="#how-it-works"><span>SCROLL TO EXPLORE</span><b aria-hidden="true">↓</b></a>
       </section>
 
-      <form className="ride-search-dock" onSubmit={submitSearch} aria-label="Search for a ride">
-        <div className="search-dock-title"><span className="eyebrow">LET'S GET YOU THERE</span><strong>Where are you headed?</strong></div>
-        <label><span>FROM</span><input required maxLength={120} value={origin} onChange={event => setOrigin(event.target.value)} placeholder="Starting point" /></label>
-        <span className="search-swap" aria-hidden="true">→</span>
-        <label><span>TO</span><input required maxLength={120} value={destination} onChange={event => setDestination(event.target.value)} placeholder="Your destination" /></label>
-        <label className="dock-date"><span>WHEN</span><input type="date" value={departureDate} onChange={event => setDepartureDate(event.target.value)} /></label>
-        <button className="dock-submit" type="submit">Search rides <span aria-hidden="true">↗</span></button>
-      </form>
+      <div className="ride-search-dock" aria-label="Search for a ride">
+        <div className="search-dock-header">
+          <div>
+            <span className="eyebrow">RIDE SEARCH</span>
+            <h2>Find your next ride</h2>
+          </div>
+          <span className="search-dock-sub">Shared verified rides across your city and state</span>
+        </div>
+        <form className="dock-form-grid" onSubmit={submitSearch}>
+          <label className="dock-field">
+            <span className="dock-field-label">From</span>
+            <input
+              required
+              maxLength={120}
+              value={origin}
+              onChange={event => setOrigin(event.target.value)}
+              placeholder="City or pickup point"
+            />
+          </label>
+          <label className="dock-field">
+            <span className="dock-field-label">To</span>
+            <input
+              required
+              maxLength={120}
+              value={destination}
+              onChange={event => setDestination(event.target.value)}
+              placeholder="Destination"
+            />
+          </label>
+          <label className="dock-field">
+            <span className="dock-field-label">Departure date</span>
+            <input
+              type="date"
+              value={departureDate}
+              onChange={event => setDepartureDate(event.target.value)}
+            />
+          </label>
+          <button className="dock-submit-btn" type="submit">
+            Search available rides <span aria-hidden="true">↗</span>
+          </button>
+        </form>
+      </div>
 
       <section className="landing-trust" aria-label="WayMate ride-sharing principles">
         <span><b>01</b><strong>One account</strong><small>Website + Android app</small></span>

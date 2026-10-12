@@ -50,19 +50,22 @@
 .hero-pagination button.is-active{width:43px;background:#b6da91}
 .hero-scroll{position:absolute;z-index:3;left:clamp(22px,6vw,96px);bottom:37px;display:flex;align-items:center;gap:12px;color:#e5ebe5;text-decoration:none}
 .hero-scroll span{font-size:9px;letter-spacing:1.5px;font-weight:700}
-.hero-scroll b{font-size:15px;font-weight:400;animation:scroll-nudge 1.8s infinite}
-.ride-search-dock{position:relative;z-index:5;display:grid;grid-template-columns:minmax(165px,1.25fr) minmax(130px,1fr) 22px minmax(130px,1fr) minmax(135px,.8fr) auto;align-items:center;gap:15px;width:min(1120px,calc(100% - 64px));margin:-43px auto 0;padding:20px 22px;background:#fff;box-shadow:0 18px 60px #14251a13}
-.search-dock-title{display:flex;flex-direction:column;gap:7px}
-.search-dock-title .eyebrow{font-size:9px;letter-spacing:1.4px}
-.search-dock-title strong{font-family:Georgia,"Times New Roman",serif;font-size:20px;font-weight:500;letter-spacing:-.5px}
-.ride-search-dock label{display:flex;flex-direction:column;gap:7px;min-width:0}
-.ride-search-dock label>span{font-size:9px;font-weight:800;letter-spacing:1.2px;color:#7b8580}
-.ride-search-dock input{width:100%;min-width:0;height:30px;border:0;border-bottom:1px solid #dce2dd;border-radius:0;padding:0 2px;color:#25352d;background:transparent;outline:none;font-size:12px}
-.ride-search-dock input:focus{border-color:#168653;box-shadow:0 1px #168653}
-.ride-search-dock input::placeholder{color:#89938d}
-.ride-search-dock .search-swap{align-self:end;padding-bottom:6px;color:#168653}
-.ride-search-dock .dock-submit{white-space:nowrap;border-radius:2px;padding:16px 18px;background:#1c2925;font-size:11px}
-.dock-submit span{margin-left:9px}
+/* Modern Ride Search Dock (Landing Page) */
+.ride-search-dock{position:relative;z-index:10;width:min(1160px,calc(100% - 48px));margin:-48px auto 0;background:#fff;border:1px solid #e3ebe7;border-radius:22px;padding:28px 32px;box-shadow:0 20px 55px rgba(6,44,69,0.1);box-sizing:border-box}
+.search-dock-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
+.search-dock-header .eyebrow{color:#109356;font-size:11px;font-weight:850;letter-spacing:1.5px;display:block}
+.search-dock-header h2{margin:5px 0 0;color:#062c45;font-family:inherit;font-size:24px;font-weight:750;letter-spacing:-.6px;line-height:1.2}
+.search-dock-sub{color:#647580;font-size:13px;font-weight:500;margin-bottom:3px}
+.dock-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:flex-end}
+.dock-field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.dock-field-label{font-size:13px;font-weight:750;color:#354955;letter-spacing:-.1px}
+.dock-field input{width:100%;height:48px;border:1.5px solid #d8e3de;border-radius:12px;background:#fff;padding:0 15px;font-size:14px;font-weight:500;color:#1c2d37;outline:none;box-sizing:border-box;transition:border-color .15s,box-shadow .15s}
+.dock-field input:focus{border-color:#109356;box-shadow:0 0 0 3px rgba(16,147,86,0.16)}
+.dock-field input::placeholder{color:#8c9ba5;font-size:14px}
+.dock-submit-btn{grid-column:1/-1;width:100%;height:48px;margin-top:4px;background:#109356;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:750;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s cubic-bezier(.2,.8,.2,1);box-shadow:0 4px 14px rgba(16,147,86,0.18)}
+.dock-submit-btn:hover{background:#0b7544;transform:translateY(-1px);box-shadow:0 8px 22px rgba(16,147,86,0.3)}
+.dock-submit-btn span{font-size:16px;transition:transform .2s}
+.dock-submit-btn:hover span{transform:translate(2px,-2px)}
 .landing-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;width:min(1120px,calc(100% - 64px));margin:0 auto;padding:39px 0 46px;border-bottom:1px solid #e8e9e3}
 .landing-trust>span{display:grid;grid-template-columns:32px 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center}
 .landing-trust>span>b{grid-row:1/3;color:#14824d;font:italic 14px Georgia,serif}
@@ -162,11 +165,10 @@
   .landing-nav{padding:0 25px}
   .landing-links{gap:21px}
   .landing-hero{min-height:560px}
-  .ride-search-dock{grid-template-columns:1fr 1fr 20px 1fr;gap:15px;width:calc(100% - 42px)}
-  .search-dock-title{grid-column:1/-1}
-  .ride-search-dock .search-swap{align-self:end}
-  .ride-search-dock .dock-date{grid-column:1/3}
-  .ride-search-dock .dock-submit{grid-column:3/5}
+  .ride-search-dock{width:calc(100% - 40px);padding:24px 22px;margin-top:-36px}
+  .search-dock-header{flex-direction:column;align-items:flex-start;gap:6px}
+  .dock-form-grid{grid-template-columns:1fr 1fr}
+  .dock-field:nth-child(3){grid-column:1/-1}
   .landing-trust,.landing-section,.landing-cta{width:calc(100% - 48px)}
   .landing-trust{grid-template-columns:repeat(2,1fr);row-gap:23px}
   .safety-banner{width:calc(100% - 48px);grid-template-columns:1fr;gap:38px}
@@ -202,14 +204,13 @@
   .hero-pagination button{width:16px}
   .hero-pagination button.is-active{width:31px}
   .hero-scroll{display:none}
-  .ride-search-dock{grid-template-columns:1fr 20px 1fr;width:calc(100% - 30px);gap:12px;margin-top:-20px;padding:18px}
-  .search-dock-title{grid-column:1/-1}
-  .search-dock-title strong{font-size:18px}
-  .ride-search-dock label>span{font-size:8px}
-  .ride-search-dock input{font-size:11px}
-  .ride-search-dock .search-swap{align-self:end;padding-bottom:6px}
-  .ride-search-dock .dock-date{grid-column:1/2}
-  .ride-search-dock .dock-submit{grid-column:2/4;padding:14px 12px}
+  .ride-search-dock{width:calc(100% - 24px);padding:20px 16px;margin-top:-24px;border-radius:18px}
+  .search-dock-header h2{font-size:20px}
+  .search-dock-sub{font-size:12px}
+  .dock-form-grid{grid-template-columns:1fr;gap:12px}
+  .dock-field:nth-child(3){grid-column:auto}
+  .dock-field input{height:44px;font-size:13.5px}
+  .dock-submit-btn{height:46px;font-size:14px}
   .landing-trust,.landing-section,.landing-cta{width:calc(100% - 38px)}
   .landing-trust{gap:20px 10px;padding:29px 0}
   .landing-trust>span{grid-template-columns:25px 1fr;column-gap:5px}
@@ -302,7 +303,6 @@ body{overflow-x:clip}
 .landing{width:100%;max-width:none;margin:0}
 .landing-hero{width:100%;max-width:none;height:clamp(620px,calc(100svh - 78px),920px);min-height:0;max-height:none;margin:0;padding-block:clamp(44px,7vh,88px)}
 .hero-video{object-position:center 55%;animation:hero-video-drift 28s ease-in-out infinite alternate}
-.ride-search-dock{width:min(1280px,calc(100% - 64px))}
 .landing-trust,.landing-section,.landing-cta{width:min(1280px,calc(100% - 64px))}
 .landing-section{padding-block:clamp(72px,7.5vw,100px)}
 .safety-banner{width:min(1280px,calc(100% - 64px));margin-bottom:72px}
@@ -310,7 +310,6 @@ body{overflow-x:clip}
 @keyframes hero-video-drift{from{transform:scale(1)}to{transform:scale(1.055)}}
 @media(max-width:650px){
   .landing-hero{width:100%;max-width:none;height:calc(100svh - 66px);min-height:540px;max-height:820px;margin:0;padding:42px 18px}
-  .ride-search-dock{width:calc(100% - 24px)}
   .landing-trust,.landing-section,.landing-cta{width:calc(100% - 36px)}
   .landing-section{padding-block:56px}
   .safety-banner{width:calc(100% - 24px);margin-bottom:48px}
